@@ -1,66 +1,61 @@
 import requests
 import xml.etree.ElementTree as ET
 from datetime import datetime
-from pytz import timezone
-import os
+import pytz
 
-# File path
-xml_file_path = 'Ember.xml'
+# Function to convert timestamp to RFC822 format
+def timestamp_to_rfc822(timestamp):
+    dt = datetime.fromtimestamp(timestamp, pytz.utc)
+    return dt.strftime("%a, %d %b %Y %H:%M:%S %z")
 
-# URL to fetch JSON data
-json_url = "https://feed.animetosho.org/json?q=%22%5BEMBER%5D%22+-batch+-bd"
-
-# Fetch JSON data
-response = requests.get(json_url)
+# Fetch the JSON data from the URL
+url = "https://feed.animetosho.org/json?q=%22%5BEMBER%5D%22+-batch+-bd"
+response = requests.get(url)
 data = response.json()
 
-# Function to convert Unix timestamp to RFC 822 format
-def unix_to_rfc822(timestamp):
-    dt = datetime.fromtimestamp(timestamp, tz=timezone('Asia/Kolkata'))
-    return dt.strftime('%a, %d %b %Y %H:%M:%S +0530')
-
-# Load existing XML file or create a new one
-if os.path.exists(xml_file_path):
-    tree = ET.parse(xml_file_path)
+# Load existing XML if it exists, otherwise create a new XML structure
+try:
+    tree = ET.parse("Ember.xml")
     root = tree.getroot()
-else:
-    root = ET.Element('rss', xmlns_atom="https://feed.animetosho.org/json?q=%22%5BEMBER%5D%22+-batch+-bd", version="2.0")
-    channel = ET.SubElement(root, 'channel')
-    ET.SubElement(channel, 'title').text = 'Ember'
-    ET.SubElement(channel, 'link').text = 'https://nyaa.si/user/Ember_Encodes'
+except FileNotFoundError:
+    root = ET.Element("rss", version="2.0")
+    channel = ET.SubElement(root, "channel")
+    title = ET.SubElement(channel, "title")
+    title.text = "Ember"
+    link = ET.SubElement(channel, "link")
+    link.text = "https://nyaa.si/user/Ember_Encodes"
     tree = ET.ElementTree(root)
 
 # Get the channel element
-channel = root.find('channel')
+channel = root.find("channel")
 
-# Track existing item links
-existing_items = {item.find('guid').text for item in channel.findall('item')} if channel is not None else set()
+# Function to check if item already exists in the XML
+def item_exists(title):
+    for item in channel.findall("item"):
+        if item.find("title").text == title:
+            return True
+    return False
 
-# Add new items to the XML
-for item in data:
-    torrent_url = item.get('torrent_url', '')
-    
-    if torrent_url in existing_items:
-        continue
-    
-    entry = ET.SubElement(channel, 'item')
-    
-    title = item.get('title', '')
-    ET.SubElement(entry, 'title').text = title
-    
-    ET.SubElement(entry, 'link').text = torrent_url
-    
-    guid = ET.SubElement(entry, 'guid', isPermaLink="true")
-    guid.text = torrent_url
-    
-    pubDate = unix_to_rfc822(item.get('timestamp', 0))
-    ET.SubElement(entry, 'pubDate').text = pubDate
-    
-    description = f"{item.get('total_size', 0) / (1024 * 1024):.1f} MiB | Seeders: {item.get('seeders', 0)} | Leechers: {item.get('leechers', 0)} | AniDB: {item.get('anidb_aid', '')} | <a href=\"{item.get('link', '')}\">{item.get('title', '')}</a>"
-    description_elem = ET.SubElement(entry, 'description')
-    description_elem.text = f"<![CDATA[{description}]]>"
+# Iterate over the JSON data and add new items to the XML
+for entry in data:
+    if not item_exists(entry["title"]):
+        item = ET.SubElement(channel, "item")
+        
+        title = ET.SubElement(item, "title")
+        title.text = entry["title"]
+        
+        link = ET.SubElement(item, "link")
+        link.text = entry["torrent_url"]
+        
+        guid = ET.SubElement(item, "guid", isPermaLink="true")
+        guid.text = entry["torrent_url"]
+        
+        pubDate = ET.SubElement(item, "pubDate")
+        pubDate.text = timestamp_to_rfc822(entry["timestamp"])
+        
+        description = ET.SubElement(item, "description")
+        hyperlink = f'<a href="https://nyaa.si/view/{entry["nyaa_id"]}">#{entry["nyaa_id"]} | {entry["title"]}</a>'
+        description.text = f"<![CDATA[{hyperlink}]]>"
 
-# Save updated XML file
-tree.write(xml_file_path, encoding='utf-8', xml_declaration=True)
-
-print(f"RSS feed XML has been updated and saved as '{xml_file_path}'.")
+# Save the updated XML to the file
+tree.write("Ember.xml", encoding="utf-8", xml_declaration=True)
