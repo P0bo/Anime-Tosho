@@ -3,6 +3,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 import pytz
 from xml.dom import minidom
+import sys
 
 # Function to convert timestamp to RFC822 format
 def timestamp_to_rfc822(timestamp):
@@ -11,7 +12,7 @@ def timestamp_to_rfc822(timestamp):
 
 # Function to fetch JSON data from a specific page
 def fetch_data_from_page(page_number):
-    url = f"https://feed.animetosho.org/json?q=Ember+-batch+-bd&page={page_number}"
+    url = f"https://feed.animetosho.org/json?q=%22%5BEmber%5D%22+-batch+-bd&page={page_number}"
     response = requests.get(url)
     return response.json()
 
@@ -78,8 +79,17 @@ def process_pages(start_page):
         update_xml_with_data(data)
         page_number -= 1
 
-# Process pages starting from 1 by default
-process_pages(1)
+# Check if a page number was provided as an argument
+if len(sys.argv) > 1:
+    try:
+        start_page = int(sys.argv[1])
+    except ValueError:
+        start_page = 1
+else:
+    start_page = 1
+
+# Process pages starting from the specified page number
+process_pages(start_page)
 
 # Convert the ElementTree to a string
 xml_str = ET.tostring(root, encoding="utf-8", method="xml")
