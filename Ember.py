@@ -54,7 +54,7 @@ for entry in data:
         pubDate.text = timestamp_to_rfc822(entry["timestamp"])
         
         description = ET.SubElement(item, "description")
-        hyperlink = f'<a href="https://nyaa.si/view/{entry["nyaa_id"]}">#{entry["nyaa_id"]} | {entry["title"]}</a>'
+        hyperlink = f'<a href="https://nyaa.si/view/{entry["nyaa_id"]}">{entry["title"]}</a>'
         description.text = f"<![CDATA[{hyperlink}]]>"
 
 # Save the updated XML to the file
