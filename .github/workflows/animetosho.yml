@@ -1,0 +1,45 @@
+name: Update Ember
+
+on:
+  workflow_dispatch: # Allows manual trigger
+    inputs:
+      feed_no:
+        description: 'Feed number (0 for all feeds)'
+        required: true
+        default: '0'
+        type: integer
+      page_no:
+        description: 'Page number'
+        required: true
+        default: '1'
+        type: integer
+
+jobs:
+  update-rss:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10' # Adjust the version if necessary
+
+    - name: Install dependencies
+      run: |
+        pip install requests pytz
+
+    - name: Run update script
+      run: python animetosho.py ${{ github.event.inputs.feed_no }} ${{ github.event.inputs.page_no }}
+
+    - name: Commit and push changes
+      env:
+        GH_PAT: ${{ secrets.GH_PAT }}
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+        git add *.xml
+        git commit -m "Update RSS feed" || echo "No changes to commit"
+        git push https://x-access-token:${{ secrets.GH_PAT }}@github.com/P0bo/Anime-Tosho.git
