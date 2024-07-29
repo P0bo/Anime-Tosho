@@ -2,6 +2,7 @@ import requests
 import xml.etree.ElementTree as ET
 from datetime import datetime
 import pytz
+from xml.dom import minidom
 
 # Function to convert timestamp to RFC822 format
 def timestamp_to_rfc822(timestamp):
@@ -66,5 +67,12 @@ for entry in data:
         description.text = description_text
         item.append(description)
 
-# Save the updated XML to the file
-tree.write("Ember.xml", encoding="utf-8", xml_declaration=True)
+# Convert the ElementTree to a string
+xml_str = ET.tostring(root, encoding="utf-8", method="xml")
+
+# Pretty print the XML string
+pretty_xml_str = minidom.parseString(xml_str).toprettyxml(indent="  ")
+
+# Save the pretty printed XML to the file
+with open("Ember.xml", "w", encoding="utf-8") as f:
+    f.write(pretty_xml_str)
