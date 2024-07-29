@@ -9,10 +9,11 @@ def timestamp_to_rfc822(timestamp):
     dt = datetime.fromtimestamp(timestamp, pytz.utc)
     return dt.strftime("%a, %d %b %Y %H:%M:%S %z")
 
-# Fetch the JSON data from the URL
-url = "https://feed.animetosho.org/json?q=%22%5BEMBER%5D%22+-batch+-bd"
-response = requests.get(url)
-data = response.json()
+# Function to fetch JSON data from a specific page
+def fetch_data_from_page(page_number):
+    url = f"https://feed.animetosho.org/json?q=Ember+-batch+-bd&page={page_number}"
+    response = requests.get(url)
+    return response.json()
 
 # Load existing XML if it exists, otherwise create a new XML structure
 try:
@@ -37,35 +38,48 @@ def item_exists(title):
             return True
     return False
 
-# Iterate over the JSON data and add new items to the XML
-for entry in data:
-    if not item_exists(entry["title"]):
-        item = ET.SubElement(channel, "item")
-        
-        title = ET.SubElement(item, "title")
-        title.text = entry["title"]
-        
-        link = ET.SubElement(item, "link")
-        link.text = entry["torrent_url"]
-        
-        guid = ET.SubElement(item, "guid", isPermaLink="true")
-        guid.text = entry["torrent_url"]
-        
-        pubDate = ET.SubElement(item, "pubDate")
-        pubDate.text = timestamp_to_rfc822(entry["timestamp"])
-        
-        # Create the description content manually
-        size = f"{entry['total_size'] / (1024 * 1024):.1f} MiB"
-        seeders = entry["seeders"]
-        leechers = entry["leechers"]
-        anidb = entry["anidb_aid"]
-        hyperlink = f'<a href="https://nyaa.si/view/{entry["nyaa_id"]}">{entry["title"]}</a>'
-        description_text = f"<![CDATA[{size} | Seeders: {seeders} | Leechers: {leechers} | AniDB: {anidb} | {hyperlink}]]>"
+# Function to update XML with new items
+def update_xml_with_data(data):
+    for entry in data:
+        if not item_exists(entry["title"]):
+            item = ET.SubElement(channel, "item")
+            
+            title = ET.SubElement(item, "title")
+            title.text = entry["title"]
+            
+            link = ET.SubElement(item, "link")
+            link.text = entry["torrent_url"]
+            
+            guid = ET.SubElement(item, "guid", isPermaLink="true")
+            guid.text = entry["torrent_url"]
+            
+            pubDate = ET.SubElement(item, "pubDate")
+            pubDate.text = timestamp_to_rfc822(entry["timestamp"])
+            
+            # Create the description content manually
+            size = f"{entry['total_size'] / (1024 * 1024):.1f} MiB"
+            seeders = entry["seeders"]
+            leechers = entry["leechers"]
+            anidb = entry["anidb_aid"]
+            hyperlink = f'<a href="https://nyaa.si/view/{entry["nyaa_id"]}">{entry["title"]}</a>'
+            description_text = f"<![CDATA[{size} | Seeders: {seeders} | Leechers: {leechers} | AniDB: {anidb} | {hyperlink}]]>"
 
-        # Directly set the description text without escaping
-        description = ET.Element("description")
-        description.text = description_text
-        item.append(description)
+            # Directly set the description text without escaping
+            description = ET.Element("description")
+            description.text = description_text
+            item.append(description)
+
+# Main function to process pages
+def process_pages(start_page):
+    page_number = start_page
+    while page_number >= 1:
+        print(f"Fetching data from page {page_number}...")
+        data = fetch_data_from_page(page_number)
+        update_xml_with_data(data)
+        page_number -= 1
+
+# Process pages starting from 1 by default
+process_pages(1)
 
 # Convert the ElementTree to a string
 xml_str = ET.tostring(root, encoding="utf-8", method="xml")
