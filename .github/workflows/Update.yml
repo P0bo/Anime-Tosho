@@ -1,7 +1,13 @@
 name: Update Ember
 
 on:
-  workflow_dispatch: # Allows manual trigger
+  workflow_dispatch:
+    inputs:
+      page_number:
+        description: 'The page number to start fetching from (default is 1)'
+        required: false
+        default: '1'
+        type: integer
 
 jobs:
   update-rss:
@@ -21,7 +27,8 @@ jobs:
         pip install requests pytz
 
     - name: Run update script
-      run: python Ember.py
+      run: |
+        python Ember.py ${{ github.event.inputs.page_number }}
 
     - name: Commit and push changes
       env:
