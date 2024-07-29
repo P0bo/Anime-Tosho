@@ -73,6 +73,9 @@ xml_str = ET.tostring(root, encoding="utf-8", method="xml")
 # Pretty print the XML string
 pretty_xml_str = minidom.parseString(xml_str).toprettyxml(indent="  ")
 
+# Fix CDATA section being escaped
+pretty_xml_str = pretty_xml_str.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
+
 # Save the pretty printed XML to the file
 with open("Ember.xml", "w", encoding="utf-8") as f:
     f.write(pretty_xml_str)
