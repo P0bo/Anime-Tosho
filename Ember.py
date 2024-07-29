@@ -59,7 +59,8 @@ for entry in data:
         leechers = entry["leechers"]
         anidb = entry["anidb_aid"]
         hyperlink = f'<a href="https://nyaa.si/view/{entry["nyaa_id"]}">{entry["title"]}</a>'
-        description.text = f"<![CDATA[{size} | Seeders: {seeders} | Leechers: {leechers} | AniDB: {anidb} | {hyperlink}]]>"
+        description_text = f"<![CDATA[{size} | Seeders: {seeders} | Leechers: {leechers} | AniDB: {anidb} | {hyperlink}]]>"
+        description.text = description_text
 
 # Save the updated XML to the file
 tree.write("Ember.xml", encoding="utf-8", xml_declaration=True)
