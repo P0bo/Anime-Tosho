@@ -61,7 +61,7 @@ for entry in data:
         anidb = entry["anidb_aid"]
         hyperlink = f'<a href="https://nyaa.si/view/{entry["nyaa_id"]}">{entry["title"]}</a>'
         description_text = f"<![CDATA[{size} | Seeders: {seeders} | Leechers: {leechers} | AniDB: {anidb} | {hyperlink}]]>"
-        
+
         # Directly set the description text without escaping
         description = ET.Element("description")
         description.text = description_text
@@ -74,7 +74,7 @@ xml_str = ET.tostring(root, encoding="utf-8", method="xml")
 pretty_xml_str = minidom.parseString(xml_str).toprettyxml(indent="  ")
 
 # Fix CDATA section being escaped
-pretty_xml_str = pretty_xml_str.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
+pretty_xml_str = pretty_xml_str.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&").replace("&quot;", '"')
 
 # Save the pretty printed XML to the file
 with open("Ember.xml", "w", encoding="utf-8") as f:
