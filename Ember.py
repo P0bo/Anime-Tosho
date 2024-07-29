@@ -4,6 +4,7 @@ from datetime import datetime
 import pytz
 from xml.dom import minidom
 import sys
+import re
 
 # Function to convert timestamp to RFC822 format
 def timestamp_to_rfc822(timestamp):
@@ -39,10 +40,16 @@ def item_exists(title):
             return True
     return False
 
+# Function to filter titles
+def is_valid_title(title):
+    # Regular expression to match titles with S#E# pattern
+    pattern = re.compile(r'\bS\d{1,4}E\d{1,4}\b', re.IGNORECASE)
+    return bool(pattern.search(title))
+
 # Function to update XML with new items
 def update_xml_with_data(data):
     for entry in data:
-        if not item_exists(entry["title"]):
+        if not item_exists(entry["title"]) and is_valid_title(entry["title"]):
             item = ET.SubElement(channel, "item")
             
             title = ET.SubElement(item, "title")
