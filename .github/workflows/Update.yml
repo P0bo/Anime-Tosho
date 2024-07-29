@@ -21,7 +21,7 @@ jobs:
         pip install requests pytz
 
     - name: Run update script
-      run: python anime\ Ember.py
+      run: python Ember.py
 
     - name: Commit and push changes
       uses: EndBug/add-and-commit@v9
