@@ -54,8 +54,12 @@ for entry in data:
         pubDate.text = timestamp_to_rfc822(entry["timestamp"])
         
         description = ET.SubElement(item, "description")
+        size = f"{entry['total_size'] / (1024 * 1024):.1f} MiB"
+        seeders = entry["seeders"]
+        leechers = entry["leechers"]
+        anidb = entry["anidb_aid"]
         hyperlink = f'<a href="https://nyaa.si/view/{entry["nyaa_id"]}">{entry["title"]}</a>'
-        description.text = f"<![CDATA[{hyperlink}]]>"
+        description.text = f"<![CDATA[{size} | Seeders: {seeders} | Leechers: {leechers} | AniDB: {anidb} | {hyperlink}]]>"
 
 # Save the updated XML to the file
 tree.write("Ember.xml", encoding="utf-8", xml_declaration=True)
