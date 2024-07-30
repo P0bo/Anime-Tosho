@@ -58,8 +58,8 @@ def get_channel_element(root):
 # Function to check if item already exists in the XML by nyaa_id
 def item_exists(channel, nyaa_id):
     for item in channel.findall("item"):
-        guid = item.find("guid").text
-        if guid == nyaa_id:
+        nyaa_id_element = item.find("nyaa_id")
+        if nyaa_id_element is not None and nyaa_id_element.text == nyaa_id:
             return True
     return False
 
@@ -83,13 +83,16 @@ def update_xml_with_data(channel, data, include_regex, exclude_regex):
             item = ET.SubElement(channel, "item")
             
             title = ET.SubElement(item, "title")
-            title.text = entry["title"]
+            title.text = f"<![CDATA[{entry['title']}]]>"
             
             link = ET.SubElement(item, "link")
             link.text = entry["torrent_url"]
             
-            guid = ET.SubElement(item, "guid", isPermaLink="true")
-            guid.text = nyaa_id
+            guid = ET.SubElement(item, "guid")
+            guid.text = entry["torrent_url"]
+            
+            nyaa_id_element = ET.SubElement(item, "nyaa_id")
+            nyaa_id_element.text = nyaa_id
             
             pubDate = ET.SubElement(item, "pubDate")
             pubDate.text = timestamp_to_rfc822(entry["timestamp"])
@@ -105,7 +108,7 @@ def update_xml_with_data(channel, data, include_regex, exclude_regex):
             description.text = description_text
             item.append(description)
 
-# Function to sort items based on pubDate
+# Function to sort items by date
 def sort_items_by_date(channel):
     items = channel.findall("item")
     items.sort(key=lambda item: datetime.strptime(item.find("pubDate").text, "%a, %d %b %Y %H:%M:%S %z"), reverse=True)
@@ -130,7 +133,7 @@ def process_feed(feed, start_page):
         update_xml_with_data(channel, data, feed.get("include_regex"), feed.get("exclude_regex"))
         page_number -= 1
 
-    # Sort items by publication date before saving
+    # Sort items by date before saving
     sort_items_by_date(channel)
 
     # Convert the ElementTree to a string
