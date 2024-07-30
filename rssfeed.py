@@ -127,8 +127,12 @@ def main(feed_number, max_page):
     items = fetch_data(feed_config['api_link'], max_page)
     filtered_items = filter_items(items, feed_config['include_regex'], feed_config['exclude_regex'])
     
-    output_xml_path = os.path.join('rssfeed', feed_config['xml_file_name'])
-    old_xml_str = ''
+    output_dir = 'rssfeed'
+    output_xml_path = os.path.join(output_dir, feed_config['xml_file_name'])
+    
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    
     if os.path.exists(output_xml_path):
         with open(output_xml_path, 'r', encoding='utf-8') as old_file:
             old_xml_str = old_file.read()
@@ -136,6 +140,7 @@ def main(feed_number, max_page):
         old_ids = extract_ids(json.loads(old_xml_str).get('items', []))
     else:
         old_ids = set()
+        old_xml_str = '<rss version="2.0"><channel></channel></rss>'
     
     new_ids = extract_ids(filtered_items)
     new_items = [item for item in filtered_items if not item_exists(old_ids, item)]
@@ -147,13 +152,11 @@ def main(feed_number, max_page):
     # Create temporary XML for new items
     temp_xml_str = create_temp_xml(new_items)
     
-    if old_xml_str:
-        merged_xml_str = merge_xml_strings(old_xml_str, temp_xml_str)
-        with open(output_xml_path, 'w', encoding='utf-8') as output_file:
-            output_file.write(merged_xml_str)
-    else:
-        with open(output_xml_path, 'w', encoding='utf-8') as output_file:
-            output_file.write(temp_xml_str)
+    # Merge old and new XML
+    merged_xml_str = merge_xml_strings(old_xml_str, temp_xml_str)
+    
+    with open(output_xml_path, 'w', encoding='utf-8') as output_file:
+        output_file.write(merged_xml_str)
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
