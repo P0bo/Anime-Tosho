@@ -1,4 +1,4 @@
-name: Update Ember
+name: Update Feeds
 
 on:
   workflow_dispatch: # Allows manual trigger
