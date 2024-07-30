@@ -35,6 +35,7 @@ os.makedirs('feeds', exist_ok=True)
 def load_or_create_xml(feed):
     xml_file_path = os.path.join('feeds', feed["xml_file_name"])
     try:
+        print(f"Loading XML file: {xml_file_path}")  # Debug print
         tree = ET.parse(xml_file_path)
         root = tree.getroot()
     except FileNotFoundError:
@@ -45,6 +46,9 @@ def load_or_create_xml(feed):
         link = ET.SubElement(channel, "link")
         link.text = feed["link"]  # Use link for channel
         tree = ET.ElementTree(root)
+    except ET.ParseError as e:
+        print(f"Error parsing XML file {xml_file_path}: {e}")  # Debug print
+        raise  # Re-raise the exception after printing the debug info
     return root, tree
 
 # Get the channel element
@@ -113,6 +117,7 @@ def sort_items_by_date(channel):
 
 # Main function to process pages
 def process_feed(feed, start_page):
+    print(f"Processing feed: {feed['name']}")  # Debug print
     root, tree = load_or_create_xml(feed)
     channel = get_channel_element(root)
     
@@ -157,8 +162,13 @@ else:
 
 # Process specified feed or all feeds
 if feed_no == 0:
-    for feed_number in feeds.keys():
-        os.system(f"python {sys.argv[0]} {feed_number} {start_page}")
+    for feed_no in feeds.keys():
+        feed = feeds.get(feed_no)
+        if feed:
+            print(f"Updating feed number {feed_no}")
+            process_feed(feed, start_page)
+        else:
+            print(f"Feed number {feed_no} not found.")
 else:
     feed = feeds.get(feed_no)
     if feed:
