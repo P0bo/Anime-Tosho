@@ -55,11 +55,15 @@ def load_or_create_xml(feed):
 def get_channel_element(root):
     return root.find("channel")
 
-# Function to check if item already exists in the XML by nyaa_id
-def item_exists(channel, nyaa_id):
+# Function to generate a unique ID for an item
+def generate_item_id(entry):
+    return entry.get("nyaa_id") or entry.get("tosho_id") or entry.get("anidex_id")
+
+# Function to check if item already exists in the XML by unique ID
+def item_exists(channel, unique_id):
     for item in channel.findall("item"):
-        nyaa_id_element = item.find("nyaa_id")
-        if nyaa_id_element is not None and nyaa_id_element.text == nyaa_id:
+        id_element = item.find("nyaa_id") or item.find("tosho_id") or item.find("anidex_id")
+        if id_element is not None and id_element.text == unique_id:
             return True
     return False
 
@@ -78,8 +82,8 @@ def is_valid_title(title, include_regex, exclude_regex):
 # Function to update XML with new items
 def update_xml_with_data(channel, data, include_regex, exclude_regex):
     for entry in data:
-        nyaa_id = str(entry["nyaa_id"])
-        if not item_exists(channel, nyaa_id) and is_valid_title(entry["title"], include_regex, exclude_regex):
+        unique_id = generate_item_id(entry)
+        if unique_id and not item_exists(channel, unique_id) and is_valid_title(entry["title"], include_regex, exclude_regex):
             item = ET.SubElement(channel, "item")
             
             title = ET.SubElement(item, "title")
@@ -91,8 +95,18 @@ def update_xml_with_data(channel, data, include_regex, exclude_regex):
             guid = ET.SubElement(item, "guid")
             guid.text = entry["torrent_url"]
             
-            nyaa_id_element = ET.SubElement(item, "nyaa_id")
-            nyaa_id_element.text = nyaa_id
+            if entry.get("nyaa_id"):
+                id_element = ET.SubElement(item, "nyaa_id")
+                id_element.text = entry["nyaa_id"]
+                hyperlink = f'<a href="https://nyaa.si/view/{entry["nyaa_id"]}">{entry["title"]}</a>'
+            elif entry.get("tosho_id"):
+                id_element = ET.SubElement(item, "tosho_id")
+                id_element.text = entry["tosho_id"]
+                hyperlink = f'<a href="https://www.tokyotosho.info/details.php?id={entry["tosho_id"]}">{entry["title"]}</a>'
+            elif entry.get("anidex_id"):
+                id_element = ET.SubElement(item, "anidex_id")
+                id_element.text = entry["anidex_id"]
+                hyperlink = f'<a href="https://anidex.info/torrent/{entry["anidex_id"]}">{entry["title"]}</a>'
             
             pubDate = ET.SubElement(item, "pubDate")
             pubDate.text = timestamp_to_rfc822(entry["timestamp"])
@@ -101,7 +115,6 @@ def update_xml_with_data(channel, data, include_regex, exclude_regex):
             seeders = entry["seeders"]
             leechers = entry["leechers"]
             anidb = entry["anidb_aid"]
-            hyperlink = f'<a href="https://nyaa.si/view/{nyaa_id}">{entry["title"]}</a>'
             description_text = f"<![CDATA[{size} | Seeders: {seeders} | Leechers: {leechers} | AniDB: {anidb} | {hyperlink}]]>"
 
             description = ET.Element("description")
