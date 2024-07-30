@@ -81,34 +81,34 @@ def item_exists(existing_ids, item):
 
 def create_temp_xml(new_items, channel_title, channel_link):
     print(f"Creating temporary XML with {len(new_items)} new items")
-    
+
     rss = ET.Element("rss", version="2.0")
     channel = ET.SubElement(rss, "channel")
 
     title = ET.SubElement(channel, "title")
     title.text = channel_title
-    
+
     link = ET.SubElement(channel, "link")
     link.text = channel_link
-    
+
     for item in new_items:
         item_element = ET.SubElement(channel, "item")
-        
+
         title = ET.SubElement(item_element, "title")
         title.text = f"<![CDATA[{item['title']}]]>"
-        
+
         link = ET.SubElement(item_element, "link")
         link.text = item['torrent_url']
-        
+
         guid = ET.SubElement(item_element, "guid")
         guid.text = item['torrent_url']
-        
+
         nyaa_id = ET.SubElement(item_element, "nyaa_id")
         nyaa_id.text = str(item['nyaa_id']) if item.get('nyaa_id') else ''
-        
+
         pubDate = ET.SubElement(item_element, "pubDate")
         pubDate.text = datetime.utcfromtimestamp(item['timestamp']).strftime('%a, %d %b %Y %H:%M:%S +0000')
-        
+
         description = ET.SubElement(item_element, "description")
         hyperlink = ''
         if item.get("nyaa_id"):
@@ -119,9 +119,9 @@ def create_temp_xml(new_items, channel_title, channel_link):
             hyperlink = f'<a href="https://anidex.info/torrent/{item["anidex_id"]}">{item["title"]}</a>'
         elif item.get("nyaa_subdom"):
             hyperlink = f'<a href="{item["link"]}">{item["title"]}</a>'
-        
+
         description.text = f"<![CDATA[{item.get('total_size', 'Unknown Size') // (1024 * 1024)} MiB | Seeders: {item.get('seeders', 'Unknown')} | Leechers: {item.get('leechers', 'Unknown')} | AniDB: {item.get('anidb_aid', 'Unknown')} | {hyperlink}]]>"
-    
+
     # Convert the ElementTree to a string
     xml_str = ET.tostring(rss, encoding="utf-8", method="xml")
 
@@ -136,16 +136,28 @@ def create_temp_xml(new_items, channel_title, channel_link):
 
     return pretty_xml_str
 
+
 def merge_xml_strings(old_xml_str, temp_xml_str):
     print("Merging old XML with new items")
-    # Extract the RSS channel tag from both old and new XML
-    old_channel = old_xml_str.split('<channel>')[1].split('</channel>')[0]
-    temp_channel = temp_xml_str.split('<channel>')[1].split('</channel>')[0]
+    # Extract the existing channel tag from the old XML
+    old_channel_start = old_xml_str.find('<channel>')
+    old_channel_end = old_xml_str.find('</channel>') + len('</channel>')
 
-    # Merge the XML content
-    merged_data = old_xml_str.replace('</channel>', temp_channel + '</channel>')
+    old_channel = old_xml_str[old_channel_start:old_channel_end]
 
+    # Extract the channel tag from the temporary XML
+    temp_channel_start = temp_xml_str.find('<channel>')
+    temp_channel_end = temp_xml_str.find('</channel>') + len('</channel>')
+
+    temp_channel = temp_xml_str[temp_channel_start:temp_channel_end]
+
+    # Combine old channel with new items
+    combined_channel = old_channel.replace('</channel>', temp_channel.replace('<channel>', '', 1) + '</channel>')
+
+    # Replace the old channel in the old XML with the combined channel
+    merged_data = old_xml_str[:old_channel_start] + combined_channel + old_xml_str[old_channel_end:]
     return merged_data
+
 
 def sort_xml_by_pubDate(xml_str):
     print("Sorting XML by pubDate")
