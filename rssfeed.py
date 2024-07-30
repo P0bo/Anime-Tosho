@@ -39,41 +39,49 @@ def item_exists(existing_items, item):
             return True
     return False
 
+def create_cdata_element(tag_name, text):
+    element = ET.Element(tag_name)
+    element.text = f"<![CDATA[{text}]]>"
+    return element
+
 def create_rss(feed_config, items):
     rss = ET.Element("rss", version="2.0")
     channel = ET.SubElement(rss, "channel")
     
-    title = ET.SubElement(channel, "title")
-    title.text = feed_config['name']
+    title_element = create_cdata_element("title", feed_config['name'])
+    channel.append(title_element)
     
-    link = ET.SubElement(channel, "link")
-    link.text = feed_config['link']
+    link_element = create_cdata_element("link", feed_config['link'])
+    channel.append(link_element)
     
     for item in items:
-        item_element = ET.SubElement(channel, "item")
+        item_element = ET.Element("item")
         
-        title = ET.SubElement(item_element, "title")
-        title.text = f"<![CDATA[{item['title']}]]>"
+        title_element = create_cdata_element("title", item['title'])
+        item_element.append(title_element)
         
-        link = ET.SubElement(item_element, "link")
-        link.text = item['torrent_url']
+        link_element = create_cdata_element("link", item['torrent_url'])
+        item_element.append(link_element)
         
-        guid = ET.SubElement(item_element, "guid")
-        guid.text = item['torrent_url']
+        guid_element = create_cdata_element("guid", item['torrent_url'])
+        item_element.append(guid_element)
         
-        # Determine the appropriate ID to use based on availability
         id_types = ['nyaa_id', 'nyaa_subdom', 'tosho_id', 'anidex_id']
         for id_type in id_types:
             if id_type in item and item[id_type]:
-                id_element = ET.SubElement(item_element, id_type)
+                id_element = ET.Element(id_type)
                 id_element.text = str(item[id_type])
+                item_element.append(id_element)
                 break
         
-        pubDate = ET.SubElement(item_element, "pubDate")
-        pubDate.text = datetime.utcfromtimestamp(item['timestamp']).strftime('%a, %d %b %Y %H:%M:%S +0000')
+        pubDate_element = create_cdata_element("pubDate", datetime.utcfromtimestamp(item['timestamp']).strftime('%a, %d %b %Y %H:%M:%S +0000'))
+        item_element.append(pubDate_element)
         
-        description = ET.SubElement(item_element, "description")
-        description.text = f"<![CDATA[{item['total_size'] // (1024 * 1024)} MiB | Seeders: {item['seeders']} | Leechers: {item['leechers']} | AniDB: {item['anidb_aid']} | <a href=\"{item['link']}\">{item['title']}</a>]]>"
+        description_text = f"{item['total_size'] // (1024 * 1024)} MiB | Seeders: {item['seeders']} | Leechers: {item['leechers']} | AniDB: {item['anidb_aid']} | <a href=\"{item['link']}\">{item['title']}</a>"
+        description_element = create_cdata_element("description", description_text)
+        item_element.append(description_element)
+        
+        channel.append(item_element)
     
     return rss
 
@@ -89,11 +97,11 @@ def update_rss_file(feed_config, new_items):
         root = ET.Element("rss", version="2.0")
         channel = ET.SubElement(root, "channel")
         
-        title = ET.SubElement(channel, "title")
-        title.text = feed_config['name']
+        title_element = create_cdata_element("title", feed_config['name'])
+        channel.append(title_element)
         
-        link = ET.SubElement(channel, "link")
-        link.text = feed_config['link']
+        link_element = create_cdata_element("link", feed_config['link'])
+        channel.append(link_element)
         
         existing_items = []
     
@@ -101,28 +109,29 @@ def update_rss_file(feed_config, new_items):
         if not item_exists(existing_items, item):
             item_element = ET.Element("item")
             
-            title = ET.SubElement(item_element, "title")
-            title.text = f"<![CDATA[{item['title']}]]>"
+            title_element = create_cdata_element("title", item['title'])
+            item_element.append(title_element)
             
-            link = ET.SubElement(item_element, "link")
-            link.text = item['torrent_url']
+            link_element = create_cdata_element("link", item['torrent_url'])
+            item_element.append(link_element)
             
-            guid = ET.SubElement(item_element, "guid")
-            guid.text = item['torrent_url']
+            guid_element = create_cdata_element("guid", item['torrent_url'])
+            item_element.append(guid_element)
             
-            # Determine the appropriate ID to use based on availability
             id_types = ['nyaa_id', 'nyaa_subdom', 'tosho_id', 'anidex_id']
             for id_type in id_types:
                 if id_type in item and item[id_type]:
-                    id_element = ET.SubElement(item_element, id_type)
+                    id_element = ET.Element(id_type)
                     id_element.text = str(item[id_type])
+                    item_element.append(id_element)
                     break
             
-            pubDate = ET.SubElement(item_element, "pubDate")
-            pubDate.text = datetime.utcfromtimestamp(item['timestamp']).strftime('%a, %d %b %Y %H:%M:%S +0000')
+            pubDate_element = create_cdata_element("pubDate", datetime.utcfromtimestamp(item['timestamp']).strftime('%a, %d %b %Y %H:%M:%S +0000'))
+            item_element.append(pubDate_element)
             
-            description = ET.SubElement(item_element, "description")
-            description.text = f"<![CDATA[{item['total_size'] // (1024 * 1024)} MiB | Seeders: {item['seeders']} | Leechers: {item['leechers']} | AniDB: {item['anidb_aid']} | <a href=\"{item['link']}\">{item['title']}</a>]]>"
+            description_text = f"{item['total_size'] // (1024 * 1024)} MiB | Seeders: {item['seeders']} | Leechers: {item['leechers']} | AniDB: {item['anidb_aid']} | <a href=\"{item['link']}\">{item['title']}</a>"
+            description_element = create_cdata_element("description", description_text)
+            item_element.append(description_element)
             
             channel.insert(0, item_element)  # Insert at the top
     
