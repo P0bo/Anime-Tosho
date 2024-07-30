@@ -38,7 +38,7 @@ def load_or_create_xml(feed):
         title = ET.SubElement(channel, "title")
         title.text = feed["name"]
         link = ET.SubElement(channel, "link")
-        link.text = feed["link"]
+        link.text = feed["link"]  # Use link for channel
         tree = ET.ElementTree(root)
     return root, tree
 
