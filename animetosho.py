@@ -60,9 +60,10 @@ def is_valid_title(title, filter_regex):
 
 # Function to update XML with new items
 def update_xml_with_data(channel, data, filter_regex):
+    items = []
     for entry in data:
         if not item_exists(channel, entry["title"]) and (not filter_regex or is_valid_title(entry["title"], filter_regex)):
-            item = ET.SubElement(channel, "item")
+            item = ET.Element("item")
             
             title = ET.SubElement(item, "title")
             title.text = entry["title"]
@@ -86,6 +87,19 @@ def update_xml_with_data(channel, data, filter_regex):
             description = ET.Element("description")
             description.text = description_text
             item.append(description)
+
+            items.append(item)
+    
+    # Sort items by pubDate in descending order
+    items.sort(key=lambda x: x.find("pubDate").text, reverse=True)
+    
+    # Clear the existing items in the channel
+    for item in channel.findall("item"):
+        channel.remove(item)
+    
+    # Add the sorted items to the channel
+    for item in items:
+        channel.append(item)
 
 # Main function to process pages
 def process_feed(feed, start_page):
