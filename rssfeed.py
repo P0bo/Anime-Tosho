@@ -6,7 +6,6 @@ import xml.etree.ElementTree as ET
 from xml.dom import minidom
 from datetime import datetime
 import sys
-from io import StringIO
 
 def fetch_data(api_link, max_page):
     data = []
@@ -17,6 +16,16 @@ def fetch_data(api_link, max_page):
         else:
             print(f"Failed to fetch data from page {page}")
     return data
+
+def extract_ids_from_xml(xml_str):
+    root = ET.fromstring(xml_str)
+    existing_ids = set()
+    for item in root.findall('.//item'):
+        for id_type in ['nyaa_id', 'nyaa_subdom', 'tosho_id', 'anidex_id']:
+            element = item.find(id_type)
+            if element is not None and element.text:
+                existing_ids.add(f"{id_type}:{element.text}")
+    return existing_ids
 
 def extract_ids(items):
     ids = set()
@@ -137,7 +146,7 @@ def main(feed_number, max_page):
         with open(output_xml_path, 'r', encoding='utf-8') as old_file:
             old_xml_str = old_file.read()
         
-        old_ids = extract_ids(json.loads(old_xml_str).get('items', []))
+        old_ids = extract_ids_from_xml(old_xml_str)
     else:
         old_ids = set()
         old_xml_str = '<rss version="2.0"><channel></channel></rss>'
