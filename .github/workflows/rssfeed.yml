@@ -1,7 +1,9 @@
 name: RSS Feeds
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:  # Manual trigger
+  schedule:           # Scheduled trigger
+    - cron: '*/30 * * * *'  # Run every 30 minutes
 
 jobs:
   update-rss:
