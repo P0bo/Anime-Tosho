@@ -15,7 +15,6 @@ def timestamp_to_rfc822(timestamp):
 # Function to fetch JSON data from a specific page
 def fetch_data_from_page(api_link, page_number):
     url = f"{api_link}{page_number}"
-    print(f"Fetching URL: {url}")  # Debugging
     response = requests.get(url)
     return response.json()
 
@@ -61,10 +60,11 @@ def is_valid_title(title, filter_regex):
 
 # Function to update XML with new items
 def update_xml_with_data(channel, data, filter_regex):
-    items = []
+    existing_titles = set(item.find("title").text for item in channel.findall("item"))
+
+    new_items = []
     for entry in data:
-        if not item_exists(channel, entry["title"]) and (not filter_regex or is_valid_title(entry["title"], filter_regex)):
-            print(f"Adding item: {entry['title']}")  # Debugging
+        if entry["title"] not in existing_titles and (not filter_regex or is_valid_title(entry["title"], filter_regex)):
             item = ET.Element("item")
             
             title = ET.SubElement(item, "title")
@@ -90,17 +90,17 @@ def update_xml_with_data(channel, data, filter_regex):
             description.text = description_text
             item.append(description)
 
-            items.append(item)
+            new_items.append(item)
     
-    # Sort items by pubDate in descending order
-    items.sort(key=lambda x: x.find("pubDate").text, reverse=True)
+    # Sort new items by pubDate in descending order
+    new_items.sort(key=lambda x: x.find("pubDate").text, reverse=True)
     
     # Clear the existing items in the channel
     for item in channel.findall("item"):
         channel.remove(item)
     
     # Add the sorted items to the channel
-    for item in items:
+    for item in new_items:
         channel.append(item)
 
 # Main function to process pages
@@ -112,7 +112,6 @@ def process_feed(feed, start_page):
     while page_number >= 1:
         print(f"Fetching data from page {page_number} for {feed['name']}...")
         data = fetch_data_from_page(feed["api_link"], page_number)
-        print(f"Data fetched: {data}")  # Debugging
         update_xml_with_data(channel, data, feed["filter"])
         page_number -= 1
 
