@@ -1,19 +1,31 @@
-name: Update max
+name: RSS Feeds
 
 on:
   workflow_dispatch:
+    inputs:
+      feed_name:
+        description: 'Name of the feed to update'
+        required: true
+        type: choice
+        options:
+          - Ember
+          - Nandesuka
+          - Nandesuka2
+          - Erai-HEVC
+      start_page:
+        description: 'Starting page number'
+        required: true
+        type: integer
+        default: 1
+      end_page:
+        description: 'Ending page number'
+        required: true
+        type: integer
+        default: 1
 
 jobs:
   update-rss:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        params:
-          - { feed_number: 1, start_page: 1, end_page: 72 }
-          - { feed_number: 2, start_page: 1, end_page: 7 }
-          - { feed_number: 3, start_page: 1, end_page: 3 }
-          - { feed_number: 4, start_page: 1, end_page: 51 }
-
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
@@ -27,8 +39,27 @@ jobs:
       run: |
         pip install requests pytz
 
+    - name: Determine Feed Number and API Link
+      id: set-feed-details
+      run: |
+        echo "FEED_NAME=${{ github.event.inputs.feed_name }}" >> $GITHUB_ENV
+        if [ "${{ github.event.inputs.feed_name }}" == "Ember" ]; then
+          echo "FEED_NUMBER=1" >> $GITHUB_ENV
+        elif [ "${{ github.event.inputs.feed_name }}" == "Nandesuka" ]; then
+          echo "FEED_NUMBER=2" >> $GITHUB_ENV
+        elif [ "${{ github.event.inputs.feed_name }}" == "Nandesuka2" ]; then
+          echo "FEED_NUMBER=3" >> $GITHUB_ENV
+        elif [ "${{ github.event.inputs.feed_name }}" == "Erai-HEVC" ]; then
+          echo "FEED_NUMBER=4" >> $GITHUB_ENV
+        else
+          echo "Unknown feed name"
+          exit 1
+        fi
+        echo "START_PAGE=${{ github.event.inputs.start_page }}" >> $GITHUB_ENV
+        echo "END_PAGE=${{ github.event.inputs.end_page }}" >> $GITHUB_ENV
+
     - name: Run update script
-      run: python rssfeed.py ${{ matrix.params.feed_number }} ${{ matrix.params.start_page }} ${{ matrix.params.end_page }}
+      run: python rssfeed.py ${{ env.FEED_NUMBER }} ${{ env.START_PAGE }} ${{ env.END_PAGE }}
 
     - name: Commit and push changes
       env:
