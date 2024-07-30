@@ -1,129 +1,121 @@
 import json
-import requests
-import re
 import os
+import re
+import sys
+import requests
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
 from datetime import datetime
-import sys
 
-def fetch_data(api_link, max_page):
-    data = []
-    for page in range(1, max_page + 1):
-        response = requests.get(f"{api_link}{page}")
-        if response.status_code == 200:
-            data.extend(response.json())
-            print(f"Fetched data from page {page}")
-        else:
-            print(f"Failed to fetch data from page {page}")
-    return data
+# Load configuration from config.json
+def load_config():
+    with open('config.json', 'r') as f:
+        return json.load(f)
 
-def extract_ids_from_xml(xml_str):
-    root = ET.fromstring(xml_str)
-    existing_ids = set()
-    for item in root.findall('.//item'):
-        for id_type in ['nyaa_id', 'nyaa_subdom', 'tosho_id', 'anidex_id']:
-            element = item.find(id_type)
-            if element is not None and element.text:
-                existing_ids.add(f"{id_type}:{element.text}")
-    print(f"Extracted IDs from XML: {existing_ids}")
-    return existing_ids
+# Fetch data from the API with the given page number
+def fetch_data(api_link, page_number):
+    url = f"{api_link}{page_number}"
+    response = requests.get(url)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        print(f"Failed to fetch data from {url}, status code: {response.status_code}")
+        sys.exit(1)
 
-def extract_ids(items):
-    ids = set()
-    for item in items:
-        nyaa_id = item.get('nyaa_id')
-        nyaa_subdom = item.get('nyaa_subdom')
-        tosho_id = item.get('tosho_id')
-        anidex_id = item.get('anidex_id')
-        if nyaa_id:
-            ids.add(f"nyaa_id:{nyaa_id}")
-        elif nyaa_subdom:
-            ids.add(f"nyaa_subdom:{nyaa_subdom}")
-        elif tosho_id:
-            ids.add(f"tosho_id:{tosho_id}")
-        elif anidex_id:
-            ids.add(f"anidex_id:{anidex_id}")
-    print(f"Extracted IDs from API data: {ids}")
-    return ids
-
-def filter_items(items, include_regex, exclude_regex):
-    filtered_items = []
+# Filter entries based on include and exclude regex
+def filter_entries(entries, include_regex, exclude_regex):
+    filtered_entries = []
     include_pattern = re.compile(include_regex) if include_regex else None
     exclude_pattern = re.compile(exclude_regex) if exclude_regex else None
 
-    for item in items:
-        title = item.get('title', '')
+    for entry in entries:
+        title = entry.get("title", "")
         if include_pattern and not include_pattern.search(title):
             continue
         if exclude_pattern and exclude_pattern.search(title):
             continue
-        filtered_items.append(item)
-    
-    print(f"Filtered items: {filtered_items}")
-    return filtered_items
+        filtered_entries.append(entry)
 
-def item_exists(existing_ids, item):
-    nyaa_id = item.get('nyaa_id')
-    nyaa_subdom = item.get('nyaa_subdom')
-    tosho_id = item.get('tosho_id')
-    anidex_id = item.get('anidex_id')
+    return filtered_entries
 
-    if nyaa_id and f"nyaa_id:{nyaa_id}" in existing_ids:
-        return True
-    if nyaa_subdom and f"nyaa_subdom:{nyaa_subdom}" in existing_ids:
-        return True
-    if tosho_id and f"tosho_id:{tosho_id}" in existing_ids:
-        return True
-    if anidex_id and f"anidex_id:{anidex_id}" in existing_ids:
-        return True
-    return False
+# Load existing IDs from the XML file, if it exists
+def load_existing_ids(xml_file_name):
+    existing_ids = set()
+    file_path = os.path.join('rssfeed', xml_file_name)
+    if os.path.exists(file_path):
+        tree = ET.parse(file_path)
+        root = tree.getroot()
+        for item in root.findall('.//item'):
+            entry_id = item.find('id')
+            if entry_id is not None:
+                existing_ids.add(entry_id.text)
+    return existing_ids
 
-def create_temp_xml(new_items, channel_title, channel_link):
-    print(f"Creating temporary XML with {len(new_items)} new items")
+# Create or update the XML file with new entries
+def update_xml_file(xml_file_name, channel_title, channel_link, entries):
+    rss = ET.Element('rss', version='2.0')
+    channel = ET.SubElement(rss, 'channel')
 
-    rss = ET.Element("rss", version="2.0")
-    channel = ET.SubElement(rss, "channel")
+    # Add channel title and link
+    title_element = ET.SubElement(channel, 'title')
+    title_element.text = channel_title
 
-    title = ET.SubElement(channel, "title")
-    title.text = channel_title
+    link_element = ET.SubElement(channel, 'link')
+    link_element.text = channel_link
 
-    link = ET.SubElement(channel, "link")
-    link.text = channel_link
+    for entry in entries:
+        item = ET.SubElement(channel, 'item')
 
-    for item in new_items:
-        item_element = ET.SubElement(channel, "item")
+        # Add item details
+        id_element = ET.SubElement(item, 'id')
+        id_element.text = str(entry['id'])
 
-        title = ET.SubElement(item_element, "title")
-        title.text = f"<![CDATA[{item['title']}]]>"
+        title_element = ET.SubElement(item, 'title')
+        title_element.text = f"<![CDATA[{entry['title']}]]>"
 
-        link = ET.SubElement(item_element, "link")
-        link.text = item['torrent_url']
+        link_element = ET.SubElement(item, 'link')
+        link_element.text = entry['torrent_url']
 
-        guid = ET.SubElement(item_element, "guid")
-        guid.text = item['torrent_url']
+        guid_element = ET.SubElement(item, 'guid')
+        guid_element.text = entry['torrent_url']
 
-        nyaa_id = ET.SubElement(item_element, "nyaa_id")
-        nyaa_id.text = str(item['nyaa_id']) if item.get('nyaa_id') else ''
+        pub_date_element = ET.SubElement(item, 'pubDate')
+        pub_date_element.text = datetime.utcfromtimestamp(entry['timestamp']).strftime('%a, %d %b %Y %H:%M:%S +0000')
 
-        pubDate = ET.SubElement(item_element, "pubDate")
-        pubDate.text = datetime.utcfromtimestamp(item['timestamp']).strftime('%a, %d %b %Y %H:%M:%S +0000')
+        # Construct the description
+        size_mb = entry['total_size'] / (1024 * 1024)
+        size_str = f"{size_mb:.2f} MiB"
 
-        description = ET.SubElement(item_element, "description")
-        hyperlink = ''
-        if item.get("nyaa_id"):
-            hyperlink = f'<a href="https://nyaa.si/view/{item["nyaa_id"]}">{item["title"]}</a>'
-        elif item.get("tosho_id"):
-            hyperlink = f'<a href="https://www.tokyotosho.info/details.php?id={item["tosho_id"]}">{item["title"]}</a>'
-        elif item.get("anidex_id"):
-            hyperlink = f'<a href="https://anidex.info/torrent/{item["anidex_id"]}">{item["title"]}</a>'
-        elif item.get("nyaa_subdom"):
-            hyperlink = f'<a href="{item["link"]}">{item["title"]}</a>'
+        seeders = entry['seeders']
+        leechers = entry['leechers']
 
-        description.text = f"<![CDATA[{item.get('total_size', 'Unknown Size') // (1024 * 1024)} MiB | Seeders: {item.get('seeders', 'Unknown')} | Leechers: {item.get('leechers', 'Unknown')} | AniDB: {item.get('anidb_aid', 'Unknown')} | {hyperlink}]]>"
+        anidb_aid = entry['anidb_aid'] if entry.get('anidb_aid') else "N/A"
+        
+        # Determine which ID to use and construct the hyperlink
+        nyaa_id = entry.get("nyaa_id")
+        tosho_id = entry.get("tosho_id")
+        anidex_id = entry.get("anidex_id")
+        
+        hyperlink = ""
+        id_info = ""
+        
+        if nyaa_id:
+            id_info = f"Nyaa: {nyaa_id}"
+            hyperlink = f'<a href="https://nyaa.si/view/{nyaa_id}">{entry["title"]}</a>'
+        elif tosho_id:
+            id_info = f"Tosho: {tosho_id}"
+            hyperlink = f'<a href="https://www.tokyotosho.info/details.php?id={tosho_id}">{entry["title"]}</a>'
+        elif anidex_id:
+            id_info = f"AniDex: {anidex_id}"
+            hyperlink = f'<a href="https://anidex.info/torrent/{anidex_id}">{entry["title"]}</a>'
 
-    # Convert the ElementTree to a string
-    xml_str = ET.tostring(rss, encoding="utf-8", method="xml")
+        description_content = f"{size_str} | Seeders: {seeders} | Leechers: {leechers} | AniDB: {anidb_aid} | {id_info} | {hyperlink}"
+
+        description_element = ET.SubElement(item, 'description')
+        description_element.text = f"<![CDATA[{description_content}]]>"
+
+    # Convert to XML string
+    xml_str = ET.tostring(rss, encoding='utf-8')
 
     # Pretty print the XML string
     pretty_xml_str = minidom.parseString(xml_str).toprettyxml(indent="  ")
@@ -134,107 +126,50 @@ def create_temp_xml(new_items, channel_title, channel_link):
     # Fix CDATA section being escaped
     pretty_xml_str = pretty_xml_str.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&").replace("&quot;", '"')
 
-    return pretty_xml_str
+    # Write to file
+    file_path = os.path.join('rssfeed', xml_file_name)
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    with open(file_path, 'w', encoding='utf-8') as f:
+        f.write(pretty_xml_str)
 
+def main():
+    if len(sys.argv) != 3:
+        print("Usage: python script.py feed_number page_number")
+        sys.exit(1)
 
-def merge_xml_strings(old_xml_str, temp_xml_str):
-    print("Merging old XML with new items")
-    # Extract the existing channel tag from the old XML
-    old_channel_start = old_xml_str.find('<channel>')
-    old_channel_end = old_xml_str.find('</channel>') + len('</channel>')
+    feed_number = int(sys.argv[1])
+    page_number = int(sys.argv[2])
 
-    old_channel = old_xml_str[old_channel_start:old_channel_end]
+    config = load_config()
+    feeds = config['feeds']
 
-    # Extract the channel tag from the temporary XML
-    temp_channel_start = temp_xml_str.find('<channel>')
-    temp_channel_end = temp_xml_str.find('</channel>') + len('</channel>')
+    # Find the feed corresponding to feed_number
+    selected_feed = None
+    for feed in feeds:
+        if feed['number'] == feed_number:
+            selected_feed = feed
+            break
 
-    temp_channel = temp_xml_str[temp_channel_start:temp_channel_end]
+    if not selected_feed:
+        print(f"Feed number {feed_number} not found.")
+        sys.exit(1)
 
-    # Combine old channel with new items
-    combined_channel = old_channel.replace('</channel>', temp_channel.replace('<channel>', '', 1) + '</channel>')
+    # Fetch data from the API
+    entries = fetch_data(selected_feed['api_link'], page_number)
 
-    # Replace the old channel in the old XML with the combined channel
-    merged_data = old_xml_str[:old_channel_start] + combined_channel + old_xml_str[old_channel_end:]
-    return merged_data
+    # Filter entries
+    filtered_entries = filter_entries(entries, selected_feed['include_regex'], selected_feed['exclude_regex'])
 
+    # Load existing IDs from the XML file
+    existing_ids = load_existing_ids(selected_feed['xml_file_name'])
 
-def sort_xml_by_pubDate(xml_str):
-    print("Sorting XML by pubDate")
-    # Extract the items
-    items = re.findall(r'(<item>.*?</item>)', xml_str, re.DOTALL)
-    
-    # Sort items based on pubDate
-    def get_pubDate(item):
-        match = re.search(r'<pubDate>(.*?)</pubDate>', item)
-        return match.group(1) if match else ''
+    # Only keep unique entries (not already in the XML)
+    unique_entries = [entry for entry in filtered_entries if str(entry['id']) not in existing_ids]
 
-    sorted_items = sorted(items, key=lambda x: datetime.strptime(get_pubDate(x), '%a, %d %b %Y %H:%M:%S +0000'), reverse=True)
+    # Update the XML file with new unique entries
+    update_xml_file(selected_feed['xml_file_name'], selected_feed['name'], selected_feed['link'], unique_entries)
 
-    # Rebuild XML with sorted items
-    channel_start = xml_str.find('<channel>')
-    channel_end = xml_str.find('</channel>')
-    return xml_str[:channel_start + len('<channel>')] + ''.join(sorted_items) + xml_str[channel_end:]
-
-def main(feed_number, max_page):
-    print(f"Starting script with feed number {feed_number} and max page {max_page}")
-    with open('config.json') as config_file:
-        config = json.load(config_file)
-    
-    feed_config = next((feed for feed in config['feeds'] if feed['number'] == feed_number), None)
-    if not feed_config:
-        print(f"No feed found with number {feed_number}")
-        return
-    
-    print(f"Feed configuration: {feed_config}")
-    
-    items = fetch_data(feed_config['api_link'], max_page)
-    filtered_items = filter_items(items, feed_config['include_regex'], feed_config['exclude_regex'])
-    
-    output_dir = 'rssfeed'
-    output_xml_path = os.path.join(output_dir, feed_config['xml_file_name'])
-    
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    
-    if os.path.exists(output_xml_path):
-        print(f"Reading existing XML file: {output_xml_path}")
-        with open(output_xml_path, 'r', encoding='utf-8') as old_file:
-            old_xml_str = old_file.read()
-        
-        old_ids = extract_ids_from_xml(old_xml_str)
-    else:
-        print(f"Creating new XML file: {output_xml_path}")
-        old_ids = set()
-        old_xml_str = '<rss version="2.0"><channel></channel></rss>'
-    
-    new_ids = extract_ids(filtered_items)
-    new_items = [item for item in filtered_items if not item_exists(old_ids, item)]
-    
-    if not new_items:
-        print("No New Update")
-        return
-    
-    # Create temporary XML for new items
-    temp_xml_str = create_temp_xml(new_items, feed_config['name'], feed_config['link'])
-    
-    # Merge old and new XML
-    merged_xml_str = merge_xml_strings(old_xml_str, temp_xml_str)
-    
-    # Sort XML by pubDate
-    sorted_xml_str = sort_xml_by_pubDate(merged_xml_str)
-    
-    with open(output_xml_path, 'w', encoding='utf-8') as output_file:
-        output_file.write(sorted_xml_str)
-    
-    print(f"Updated XML file written to: {output_xml_path}")
+    print(f"Processed {len(unique_entries)} new entries for feed {selected_feed['name']}.")
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Usage: rssfeed.py feed_number page_number")
-        sys.exit(1)
-    
-    feed_number = int(sys.argv[1])
-    max_page = int(sys.argv[2])
-    
-    main(feed_number, max_page)
+    main()
