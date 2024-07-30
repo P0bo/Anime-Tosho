@@ -58,15 +58,22 @@ def item_exists(channel, title):
             return True
     return False
 
-# Function to filter titles
-def is_valid_title(title, filter_regex):
-    pattern = re.compile(filter_regex, re.IGNORECASE)
-    return bool(pattern.search(title))
+# Function to filter titles based on include and exclude regex
+def is_valid_title(title, include_regex, exclude_regex):
+    if include_regex:
+        include_pattern = re.compile(include_regex, re.IGNORECASE)
+        if not include_pattern.search(title):
+            return False
+    if exclude_regex:
+        exclude_pattern = re.compile(exclude_regex, re.IGNORECASE)
+        if exclude_pattern.search(title):
+            return False
+    return True
 
 # Function to update XML with new items
-def update_xml_with_data(channel, data, filter_regex):
+def update_xml_with_data(channel, data, include_regex, exclude_regex):
     for entry in data:
-        if not item_exists(channel, entry["title"]) and (not filter_regex or is_valid_title(entry["title"], filter_regex)):
+        if not item_exists(channel, entry["title"]) and is_valid_title(entry["title"], include_regex, exclude_regex):
             item = ET.SubElement(channel, "item")
             
             title = ET.SubElement(item, "title")
@@ -113,7 +120,7 @@ def process_feed(feed, start_page):
     while page_number >= 1:
         print(f"Fetching data from page {page_number} for {feed['name']}...")
         data = fetch_data_from_page(feed["api_link"], page_number)
-        update_xml_with_data(channel, data, feed["filter"])
+        update_xml_with_data(channel, data, feed.get("include_regex"), feed.get("exclude_regex"))
         page_number -= 1
 
     # Sort items by publication date before saving
