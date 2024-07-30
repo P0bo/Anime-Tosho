@@ -15,6 +15,14 @@
       "link": "https://nyaa.si/user/Nandesuka",
       "api_link": "https://feed.animetosho.org/json?q=1080p+Nandesuka+b+global+-%22h.264%22&page=",
       "filter": "S\\d+E\\d+"
+    },
+    {
+      "number": 3,
+      "name": "Nandesuka",
+      "xml_file_name": "Nandesuka2.xml",
+      "link": "https://nyaa.si/user/Nandesuka",
+      "api_link": "https://feed.animetosho.org/json?q=2160p+Nandesuka+b+global+-%22h.264%22&page=",
+      "filter": "S\\d+E\\d+"
     }
   ]
 }
