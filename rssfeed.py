@@ -98,7 +98,17 @@ def create_temp_xml(new_items):
         pubDate.text = datetime.utcfromtimestamp(item['timestamp']).strftime('%a, %d %b %Y %H:%M:%S +0000')
         
         description = ET.SubElement(item_element, "description")
-        description.text = f"<![CDATA[{item['total_size'] // (1024 * 1024)} MiB | Seeders: {item['seeders']} | Leechers: {item['leechers']} | AniDB: {item['anidb_aid']} | <a href=\"{item['link']}\">{item['title']}</a>]]>"
+        hyperlink = ''
+        if item.get("nyaa_id"):
+            hyperlink = f'<a href="https://nyaa.si/view/{item["nyaa_id"]}">{item["title"]}</a>'
+        elif item.get("tosho_id"):
+            hyperlink = f'<a href="https://www.tokyotosho.info/details.php?id={item["tosho_id"]}">{item["title"]}</a>'
+        elif item.get("anidex_id"):
+            hyperlink = f'<a href="https://anidex.info/torrent/{item["anidex_id"]}">{item["title"]}</a>'
+        elif item.get("nyaa_subdom"):
+            hyperlink = f'<a href="{item["link"]}">{item["title"]}</a>'
+        
+        description.text = f"<![CDATA[{item.get('total_size', 'Unknown Size') // (1024 * 1024)} MiB | Seeders: {item.get('seeders', 'Unknown')} | Leechers: {item.get('leechers', 'Unknown')} | AniDB: {item.get('anidb_aid', 'Unknown')} | {hyperlink}]]>"
     
     # Convert the ElementTree to a string
     xml_str = ET.tostring(rss, encoding="utf-8", method="xml")
