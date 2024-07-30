@@ -15,6 +15,7 @@ def timestamp_to_rfc822(timestamp):
 # Function to fetch JSON data from a specific page
 def fetch_data_from_page(api_link, page_number):
     url = f"{api_link}{page_number}"
+    print(f"Fetching URL: {url}")  # Debugging
     response = requests.get(url)
     return response.json()
 
@@ -63,6 +64,7 @@ def update_xml_with_data(channel, data, filter_regex):
     items = []
     for entry in data:
         if not item_exists(channel, entry["title"]) and (not filter_regex or is_valid_title(entry["title"], filter_regex)):
+            print(f"Adding item: {entry['title']}")  # Debugging
             item = ET.Element("item")
             
             title = ET.SubElement(item, "title")
@@ -110,6 +112,7 @@ def process_feed(feed, start_page):
     while page_number >= 1:
         print(f"Fetching data from page {page_number} for {feed['name']}...")
         data = fetch_data_from_page(feed["api_link"], page_number)
+        print(f"Data fetched: {data}")  # Debugging
         update_xml_with_data(channel, data, feed["filter"])
         page_number -= 1
 
