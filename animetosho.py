@@ -108,10 +108,10 @@ def update_xml_with_data(channel, data, include_regex, exclude_regex):
             description.text = description_text
             item.append(description)
 
-# Function to sort items by nyaa_id
-def sort_items_by_nyaa_id(channel):
+# Function to sort items by date
+def sort_items_by_date(channel):
     items = channel.findall("item")
-    items.sort(key=lambda item: int(item.find("nyaa_id").text), reverse=True)
+    items.sort(key=lambda item: datetime.strptime(item.find("pubDate").text, "%a, %d %b %Y %H:%M:%S %z"), reverse=True)
     
     # Remove all items and re-add them in sorted order
     for item in channel.findall("item"):
@@ -133,8 +133,8 @@ def process_feed(feed, start_page):
         update_xml_with_data(channel, data, feed.get("include_regex"), feed.get("exclude_regex"))
         page_number -= 1
 
-    # Sort items by nyaa_id before saving
-    sort_items_by_nyaa_id(channel)
+    # Sort items by date before saving
+    sort_items_by_date(channel)
 
     # Convert the ElementTree to a string
     xml_str = ET.tostring(root, encoding="utf-8", method="xml")
