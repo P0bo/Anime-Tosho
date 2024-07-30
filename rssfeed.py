@@ -17,6 +17,23 @@ def fetch_data(api_link, max_page):
             print(f"Failed to fetch data from page {page}")
     return data
 
+def extract_ids(items):
+    ids = set()
+    for item in items:
+        nyaa_id = item.get('nyaa_id')
+        nyaa_subdom = item.get('nyaa_subdom')
+        tosho_id = item.get('tosho_id')
+        anidex_id = item.get('anidex_id')
+        if nyaa_id:
+            ids.add(f"nyaa_id:{nyaa_id}")
+        elif nyaa_subdom:
+            ids.add(f"nyaa_subdom:{nyaa_subdom}")
+        elif tosho_id:
+            ids.add(f"tosho_id:{tosho_id}")
+        elif anidex_id:
+            ids.add(f"anidex_id:{anidex_id}")
+    return ids
+
 def filter_items(items, include_regex, exclude_regex):
     filtered_items = []
     include_pattern = re.compile(include_regex) if include_regex else None
@@ -32,130 +49,66 @@ def filter_items(items, include_regex, exclude_regex):
     
     return filtered_items
 
-def item_exists(existing_items, item):
-    # Check if any ID field (nyaa_id, nyaa_subdom, tosho_id, anidex_id) matches
-    for existing_item in existing_items:
-        if any(existing_item.find(id_type) is not None and existing_item.find(id_type).text == str(item.get(id_type)) for id_type in ['nyaa_id', 'nyaa_subdom', 'tosho_id', 'anidex_id']):
-            return True
+def item_exists(existing_ids, item):
+    nyaa_id = item.get('nyaa_id')
+    nyaa_subdom = item.get('nyaa_subdom')
+    tosho_id = item.get('tosho_id')
+    anidex_id = item.get('anidex_id')
+
+    if nyaa_id and f"nyaa_id:{nyaa_id}" in existing_ids:
+        return True
+    if nyaa_subdom and f"nyaa_subdom:{nyaa_subdom}" in existing_ids:
+        return True
+    if tosho_id and f"tosho_id:{tosho_id}" in existing_ids:
+        return True
+    if anidex_id and f"anidex_id:{anidex_id}" in existing_ids:
+        return True
     return False
 
-def create_cdata_element(tag, text):
-    element = ET.Element(tag)
-    element.text = text
-    return element
-
-def create_rss(feed_config, items):
+def create_temp_xml(new_items):
     rss = ET.Element("rss", version="2.0")
     channel = ET.SubElement(rss, "channel")
     
-    title_element = ET.Element("title")
-    title_element.text = feed_config['name']
-    channel.append(title_element)
-    
-    link_element = ET.Element("link")
-    link_element.text = feed_config['link']
-    channel.append(link_element)
-    
-    for item in items:
-        item_element = ET.Element("item")
+    for item in new_items:
+        item_element = ET.SubElement(channel, "item")
         
-        title_element = create_cdata_element("title", item['title'])
-        item_element.append(title_element)
+        title = ET.SubElement(item_element, "title")
+        title.text = f"<![CDATA[{item['title']}]]>"
         
-        link_element = ET.Element("link")
-        link_element.text = item['torrent_url']
-        item_element.append(link_element)
+        link = ET.SubElement(item_element, "link")
+        link.text = item['torrent_url']
         
-        guid_element = ET.Element("guid")
-        guid_element.text = item['torrent_url']
-        item_element.append(guid_element)
+        guid = ET.SubElement(item_element, "guid")
+        guid.text = item['torrent_url']
         
-        id_types = ['nyaa_id', 'nyaa_subdom', 'tosho_id', 'anidex_id']
-        for id_type in id_types:
-            if id_type in item and item[id_type]:
-                id_element = ET.Element(id_type)
-                id_element.text = str(item[id_type])
-                item_element.append(id_element)
-                break
+        nyaa_id = ET.SubElement(item_element, "nyaa_id")
+        nyaa_id.text = str(item['nyaa_id']) if item.get('nyaa_id') else ''
         
-        pubDate_element = ET.Element("pubDate")
-        pubDate_element.text = datetime.utcfromtimestamp(item['timestamp']).strftime('%a, %d %b %Y %H:%M:%S +0000')
-        item_element.append(pubDate_element)
+        pubDate = ET.SubElement(item_element, "pubDate")
+        pubDate.text = datetime.utcfromtimestamp(item['timestamp']).strftime('%a, %d %b %Y %H:%M:%S +0000')
         
-        description_text = f"{item['total_size'] // (1024 * 1024)} MiB | Seeders: {item['seeders']} | Leechers: {item['leechers']} | AniDB: {item['anidb_aid']} | <a href=\"{item['link']}\">{item['title']}</a>"
-        description_element = create_cdata_element("description", description_text)
-        item_element.append(description_element)
-        
-        channel.append(item_element)
+        description = ET.SubElement(item_element, "description")
+        description.text = f"<![CDATA[{item['total_size'] // (1024 * 1024)} MiB | Seeders: {item['seeders']} | Leechers: {item['leechers']} | AniDB: {item['anidb_aid']} | <a href=\"{item['link']}\">{item['title']}</a>]]>"
     
     return rss
 
-def update_rss_file(feed_config, new_items):
-    file_path = os.path.join('rssfeed', feed_config['xml_file_name'])
-    if os.path.exists(file_path):
-        tree = ET.parse(file_path)
-        root = tree.getroot()
-        channel = root.find('channel')
-        existing_items = channel.findall('item')
-    else:
-        os.makedirs('rssfeed', exist_ok=True)
-        root = ET.Element("rss", version="2.0")
-        channel = ET.SubElement(root, "channel")
-        
-        title_element = ET.Element("title")
-        title_element.text = feed_config['name']
-        channel.append(title_element)
-        
-        link_element = ET.Element("link")
-        link_element.text = feed_config['link']
-        channel.append(link_element)
-        
-        existing_items = []
-    
-    for item in new_items:
-        if not item_exists(existing_items, item):
-            item_element = ET.Element("item")
-            
-            title_element = create_cdata_element("title", item['title'])
-            item_element.append(title_element)
-            
-            link_element = ET.Element("link")
-            link_element.text = item['torrent_url']
-            item_element.append(link_element)
-            
-            guid_element = ET.Element("guid")
-            guid_element.text = item['torrent_url']
-            item_element.append(guid_element)
-            
-            id_types = ['nyaa_id', 'nyaa_subdom', 'tosho_id', 'anidex_id']
-            for id_type in id_types:
-                if id_type in item and item[id_type]:
-                    id_element = ET.Element(id_type)
-                    id_element.text = str(item[id_type])
-                    item_element.append(id_element)
-                    break
-            
-            pubDate_element = ET.Element("pubDate")
-            pubDate_element.text = datetime.utcfromtimestamp(item['timestamp']).strftime('%a, %d %b %Y %H:%M:%S +0000')
-            item_element.append(pubDate_element)
-            
-            description_text = f"{item['total_size'] // (1024 * 1024)} MiB | Seeders: {item['seeders']} | Leechers: {item['leechers']} | AniDB: {item['anidb_aid']} | <a href=\"{item['link']}\">{item['title']}</a>"
-            description_element = create_cdata_element("description", description_text)
-            item_element.append(description_element)
-            
-            channel.insert(0, item_element)  # Insert at the top
-    
-    # Convert the ElementTree to a string
-    xml_str = ET.tostring(root, encoding="utf-8", method="xml")
+def merge_xml_files(old_xml_path, temp_xml_path, output_xml_path):
+    with open(old_xml_path, 'r', encoding='utf-8') as old_file:
+        old_data = old_file.read()
 
-    # Pretty print the XML string
-    pretty_xml_str = minidom.parseString(xml_str).toprettyxml(indent="  ")
+    with open(temp_xml_path, 'r', encoding='utf-8') as temp_file:
+        temp_data = temp_file.read()
 
-    # Remove extra blank lines between elements
-    pretty_xml_str = "\n".join(line for line in pretty_xml_str.splitlines() if line.strip())
+    # Extract the RSS channel tag from both old and new XML
+    old_channel = old_data.split('<channel>')[1].split('</channel>')[0]
+    temp_channel = temp_data.split('<channel>')[1].split('</channel>')[0]
 
-    with open(file_path, 'w', encoding='utf-8') as file:
-        file.write(pretty_xml_str)
+    # Merge the XML content
+    merged_data = old_data.replace('</channel>', temp_channel + '</channel>')
+
+    # Save the merged XML
+    with open(output_xml_path, 'w', encoding='utf-8') as output_file:
+        output_file.write(merged_data)
 
 def main(feed_number, max_page):
     with open('config.json') as config_file:
@@ -169,7 +122,44 @@ def main(feed_number, max_page):
     items = fetch_data(feed_config['api_link'], max_page)
     filtered_items = filter_items(items, feed_config['include_regex'], feed_config['exclude_regex'])
     
-    update_rss_file(feed_config, filtered_items)
+    temp_xml_path = 'rssfeed/temp_new_items.xml'
+    output_xml_path = os.path.join('rssfeed', feed_config['xml_file_name'])
+    old_xml_path = output_xml_path if os.path.exists(output_xml_path) else None
+    
+    if old_xml_path:
+        with open(old_xml_path, 'r', encoding='utf-8') as old_file:
+            old_ids = extract_ids(json.loads(old_file.read()).get('items', []))
+    else:
+        old_ids = set()
+    
+    new_ids = extract_ids(filtered_items)
+    new_items = [item for item in filtered_items if not item_exists(old_ids, item)]
+    
+    if not new_items:
+        print("No New Update")
+        return
+    
+    # Create temporary XML for new items
+    temp_rss = create_temp_xml(new_items)
+    temp_xml_str = ET.tostring(temp_rss, encoding="utf-8", method="xml")
+
+    # Pretty print the XML string
+    pretty_xml_str = minidom.parseString(temp_xml_str).toprettyxml(indent="  ")
+
+    # Remove extra blank lines between elements
+    pretty_xml_str = "\n".join(line for line in pretty_xml_str.splitlines() if line.strip())
+
+    # Fix CDATA section being escaped
+    pretty_xml_str = pretty_xml_str.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&").replace("&quot;", '"')
+
+    with open(temp_xml_path, 'w', encoding='utf-8') as temp_file:
+        temp_file.write(pretty_xml_str)
+    
+    if old_xml_path:
+        merge_xml_files(old_xml_path, temp_xml_path, output_xml_path)
+        os.remove(temp_xml_path)
+    else:
+        os.rename(temp_xml_path, output_xml_path)
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
