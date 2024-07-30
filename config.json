@@ -2,19 +2,19 @@
   "feeds": [
     {
       "number": 1,
-      "name": "Feed 1",
-      "xml_file_name": "Feed1.xml",
-      "link": "https://feed.animetosho.org/json?q=%22%5BFeed1%5D%22+-batch+-bd&page=",
-      "api_link": "https://feed.animetosho.org/json?q=%22%5BFeed1%5D%22+-batch+-bd&page=",
-      "filter": "S\\d+E\\d+"  // Example regex filter
+      "name": "Ember",
+      "xml_file_name": "Ember.xml",
+      "link": "https://nyaa.si/user/Ember_Encodes",  // Channel link
+      "api_link": "https://feed.animetosho.org/json?q=%22%5BFeed1%5D%22+-batch+-bd&page=",  // API link
+      "filter": "S\\d+E\\d+"
     },
     {
       "number": 2,
-      "name": "Feed 2",
+      "name": "Namdesuka",
       "xml_file_name": "Feed2.xml",
-      "link": "https://feed.animetosho.org/json?q=%22%5BFeed2%5D%22+-batch+-bd&page=",
-      "api_link": "https://feed.animetosho.org/json?q=%22%5BFeed2%5D%22+-batch+-bd&page=",
-      "filter": ""  // No filter
+      "link": "https://nyaa.si/user/Nandesuka",  // Channel link
+      "api_link": "https://feed.animetosho.org/json?q=1080p+Nandesuka+b+global+-%22h.264%22&page=",  // API link
+      "filter": "S\\d+E\\d+"
     }
   ]
 }
