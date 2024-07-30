@@ -111,21 +111,8 @@ def sort_items_by_date(channel):
     for item in items:
         channel.append(item)
 
-# Main function to process pages
-def process_feed(feed, start_page):
-    root, tree = load_or_create_xml(feed)
-    channel = get_channel_element(root)
-    
-    page_number = start_page
-    while page_number >= 1:
-        print(f"Fetching data from page {page_number} for {feed['name']}...")
-        data = fetch_data_from_page(feed["api_link"], page_number)
-        update_xml_with_data(channel, data, feed.get("include_regex"), feed.get("exclude_regex"))
-        page_number -= 1
-
-    # Sort items by publication date before saving
-    sort_items_by_date(channel)
-
+# Save the XML to a file
+def save_xml(root, feed):
     # Convert the ElementTree to a string
     xml_str = ET.tostring(root, encoding="utf-8", method="xml")
 
@@ -142,6 +129,24 @@ def process_feed(feed, start_page):
     xml_file_path = os.path.join('feeds', feed["xml_file_name"])
     with open(xml_file_path, "w", encoding="utf-8") as f:
         f.write(pretty_xml_str)
+
+# Main function to process pages
+def process_feed(feed, start_page):
+    root, tree = load_or_create_xml(feed)
+    channel = get_channel_element(root)
+    
+    page_number = start_page
+    while page_number >= 1:
+        print(f"Fetching data from page {page_number} for {feed['name']}...")
+        data = fetch_data_from_page(feed["api_link"], page_number)
+        update_xml_with_data(channel, data, feed.get("include_regex"), feed.get("exclude_regex"))
+        page_number -= 1
+
+    # Sort items by publication date before saving
+    sort_items_by_date(channel)
+
+    # Save the XML after processing each feed
+    save_xml(root, feed)
 
 # Check if a page number was provided as an argument
 if len(sys.argv) > 1:
