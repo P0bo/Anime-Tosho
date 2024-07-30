@@ -8,21 +8,17 @@ from datetime import datetime
 import sys
 
 def fetch_data(api_link, max_page):
-    print(f"Fetching data from API link: {api_link}")
     data = []
     for page in range(1, max_page + 1):
-        print(f"Fetching page {page}...")
         response = requests.get(f"{api_link}{page}")
         if response.status_code == 200:
             data.extend(response.json())
-            print(f"Page {page} fetched successfully.")
+            print(f"Fetched data from page {page}")
         else:
-            print(f"Failed to fetch data from page {page}. Status code: {response.status_code}")
-    print(f"Total items fetched: {len(data)}")
+            print(f"Failed to fetch data from page {page}")
     return data
 
 def extract_ids_from_xml(xml_str):
-    print("Extracting IDs from XML...")
     root = ET.fromstring(xml_str)
     existing_ids = set()
     for item in root.findall('.//item'):
@@ -30,11 +26,10 @@ def extract_ids_from_xml(xml_str):
             element = item.find(id_type)
             if element is not None and element.text:
                 existing_ids.add(f"{id_type}:{element.text}")
-    print(f"Existing IDs extracted: {existing_ids}")
+    print(f"Extracted IDs from XML: {existing_ids}")
     return existing_ids
 
 def extract_ids(items):
-    print("Extracting IDs from new items...")
     ids = set()
     for item in items:
         nyaa_id = item.get('nyaa_id')
@@ -49,11 +44,10 @@ def extract_ids(items):
             ids.add(f"tosho_id:{tosho_id}")
         elif anidex_id:
             ids.add(f"anidex_id:{anidex_id}")
-    print(f"New IDs extracted: {ids}")
+    print(f"Extracted IDs from API data: {ids}")
     return ids
 
 def filter_items(items, include_regex, exclude_regex):
-    print("Filtering items...")
     filtered_items = []
     include_pattern = re.compile(include_regex) if include_regex else None
     exclude_pattern = re.compile(exclude_regex) if exclude_regex else None
@@ -61,41 +55,41 @@ def filter_items(items, include_regex, exclude_regex):
     for item in items:
         title = item.get('title', '')
         if include_pattern and not include_pattern.search(title):
-            print(f"Item excluded by include_regex: {title}")
             continue
         if exclude_pattern and exclude_pattern.search(title):
-            print(f"Item excluded by exclude_regex: {title}")
             continue
         filtered_items.append(item)
     
-    print(f"Filtered items count: {len(filtered_items)}")
+    print(f"Filtered items: {filtered_items}")
     return filtered_items
 
 def item_exists(existing_ids, item):
-    print("Checking if item exists...")
     nyaa_id = item.get('nyaa_id')
     nyaa_subdom = item.get('nyaa_subdom')
     tosho_id = item.get('tosho_id')
     anidex_id = item.get('anidex_id')
 
     if nyaa_id and f"nyaa_id:{nyaa_id}" in existing_ids:
-        print(f"Item exists with nyaa_id: {nyaa_id}")
         return True
     if nyaa_subdom and f"nyaa_subdom:{nyaa_subdom}" in existing_ids:
-        print(f"Item exists with nyaa_subdom: {nyaa_subdom}")
         return True
     if tosho_id and f"tosho_id:{tosho_id}" in existing_ids:
-        print(f"Item exists with tosho_id: {tosho_id}")
         return True
     if anidex_id and f"anidex_id:{anidex_id}" in existing_ids:
-        print(f"Item exists with anidex_id: {anidex_id}")
         return True
     return False
 
-def create_temp_xml(new_items):
-    print("Creating temporary XML...")
+def create_temp_xml(new_items, channel_title, channel_link):
+    print(f"Creating temporary XML with {len(new_items)} new items")
+    
     rss = ET.Element("rss", version="2.0")
     channel = ET.SubElement(rss, "channel")
+
+    title = ET.SubElement(channel, "title")
+    title.text = channel_title
+    
+    link = ET.SubElement(channel, "link")
+    link.text = channel_link
     
     for item in new_items:
         item_element = ET.SubElement(channel, "item")
@@ -140,11 +134,10 @@ def create_temp_xml(new_items):
     # Fix CDATA section being escaped
     pretty_xml_str = pretty_xml_str.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&").replace("&quot;", '"')
 
-    print("Temporary XML created.")
     return pretty_xml_str
 
 def merge_xml_strings(old_xml_str, temp_xml_str):
-    print("Merging old and new XML...")
+    print("Merging old XML with new items")
     # Extract the RSS channel tag from both old and new XML
     old_channel = old_xml_str.split('<channel>')[1].split('</channel>')[0]
     temp_channel = temp_xml_str.split('<channel>')[1].split('</channel>')[0]
@@ -152,11 +145,10 @@ def merge_xml_strings(old_xml_str, temp_xml_str):
     # Merge the XML content
     merged_data = old_xml_str.replace('</channel>', temp_channel + '</channel>')
 
-    print("XML merged.")
     return merged_data
 
 def sort_xml_by_pubDate(xml_str):
-    print("Sorting XML by pubDate...")
+    print("Sorting XML by pubDate")
     # Extract the items
     items = re.findall(r'(<item>.*?</item>)', xml_str, re.DOTALL)
     
@@ -170,14 +162,10 @@ def sort_xml_by_pubDate(xml_str):
     # Rebuild XML with sorted items
     channel_start = xml_str.find('<channel>')
     channel_end = xml_str.find('</channel>')
-    sorted_xml = xml_str[:channel_start + len('<channel>')] + ''.join(sorted_items) + xml_str[channel_end:]
-
-    print("XML sorted.")
-    return sorted_xml
+    return xml_str[:channel_start + len('<channel>')] + ''.join(sorted_items) + xml_str[channel_end:]
 
 def main(feed_number, max_page):
-    print(f"Starting main function with feed_number={feed_number} and max_page={max_page}")
-    
+    print(f"Starting script with feed number {feed_number} and max page {max_page}")
     with open('config.json') as config_file:
         config = json.load(config_file)
     
@@ -185,6 +173,8 @@ def main(feed_number, max_page):
     if not feed_config:
         print(f"No feed found with number {feed_number}")
         return
+    
+    print(f"Feed configuration: {feed_config}")
     
     items = fetch_data(feed_config['api_link'], max_page)
     filtered_items = filter_items(items, feed_config['include_regex'], feed_config['exclude_regex'])
@@ -194,16 +184,15 @@ def main(feed_number, max_page):
     
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-        print(f"Output directory created: {output_dir}")
     
     if os.path.exists(output_xml_path):
-        print(f"Loading existing XML file: {output_xml_path}")
+        print(f"Reading existing XML file: {output_xml_path}")
         with open(output_xml_path, 'r', encoding='utf-8') as old_file:
             old_xml_str = old_file.read()
         
         old_ids = extract_ids_from_xml(old_xml_str)
     else:
-        print(f"XML file does not exist. Creating new file: {output_xml_path}")
+        print(f"Creating new XML file: {output_xml_path}")
         old_ids = set()
         old_xml_str = '<rss version="2.0"><channel></channel></rss>'
     
@@ -215,7 +204,7 @@ def main(feed_number, max_page):
         return
     
     # Create temporary XML for new items
-    temp_xml_str = create_temp_xml(new_items)
+    temp_xml_str = create_temp_xml(new_items, feed_config['name'], feed_config['link'])
     
     # Merge old and new XML
     merged_xml_str = merge_xml_strings(old_xml_str, temp_xml_str)
@@ -223,7 +212,6 @@ def main(feed_number, max_page):
     # Sort XML by pubDate
     sorted_xml_str = sort_xml_by_pubDate(merged_xml_str)
     
-    # Write to output file
     with open(output_xml_path, 'w', encoding='utf-8') as output_file:
         output_file.write(sorted_xml_str)
     
