@@ -33,16 +33,9 @@ def filter_items(items, include_regex, exclude_regex):
     return filtered_items
 
 def item_exists(existing_items, item):
-    nyaa_id = item.get('nyaa_id')
-    nyaa_subdom = item.get('nyaa_subdom')
-    tosho_id = item.get('tosho_id')
-    anidex_id = item.get('anidex_id')
-
+    # Check if any ID field (nyaa_id, nyaa_subdom, tosho_id, anidex_id) matches
     for existing_item in existing_items:
-        if (existing_item.find('nyaa_id') is not None and existing_item.find('nyaa_id').text == str(nyaa_id)) or \
-           (existing_item.find('nyaa_subdom') is not None and existing_item.find('nyaa_subdom').text == str(nyaa_subdom)) or \
-           (existing_item.find('tosho_id') is not None and existing_item.find('tosho_id').text == str(tosho_id)) or \
-           (existing_item.find('anidex_id') is not None and existing_item.find('anidex_id').text == str(anidex_id)):
+        if any(existing_item.find(id_type) is not None and existing_item.find(id_type).text == str(item.get(id_type)) for id_type in ['nyaa_id', 'nyaa_subdom', 'tosho_id', 'anidex_id']):
             return True
     return False
 
@@ -68,8 +61,13 @@ def create_rss(feed_config, items):
         guid = ET.SubElement(item_element, "guid")
         guid.text = item['torrent_url']
         
-        nyaa_id = ET.SubElement(item_element, "nyaa_id")
-        nyaa_id.text = str(item['nyaa_id']) if item.get('nyaa_id') else ''
+        # Determine the appropriate ID to use based on availability
+        id_types = ['nyaa_id', 'nyaa_subdom', 'tosho_id', 'anidex_id']
+        for id_type in id_types:
+            if id_type in item and item[id_type]:
+                id_element = ET.SubElement(item_element, id_type)
+                id_element.text = str(item[id_type])
+                break
         
         pubDate = ET.SubElement(item_element, "pubDate")
         pubDate.text = datetime.utcfromtimestamp(item['timestamp']).strftime('%a, %d %b %Y %H:%M:%S +0000')
@@ -112,8 +110,13 @@ def update_rss_file(feed_config, new_items):
             guid = ET.SubElement(item_element, "guid")
             guid.text = item['torrent_url']
             
-            nyaa_id = ET.SubElement(item_element, "nyaa_id")
-            nyaa_id.text = str(item['nyaa_id']) if item.get('nyaa_id') else ''
+            # Determine the appropriate ID to use based on availability
+            id_types = ['nyaa_id', 'nyaa_subdom', 'tosho_id', 'anidex_id']
+            for id_type in id_types:
+                if id_type in item and item[id_type]:
+                    id_element = ET.SubElement(item_element, id_type)
+                    id_element.text = str(item[id_type])
+                    break
             
             pubDate = ET.SubElement(item_element, "pubDate")
             pubDate.text = datetime.utcfromtimestamp(item['timestamp']).strftime('%a, %d %b %Y %H:%M:%S +0000')
