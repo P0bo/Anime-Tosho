@@ -41,7 +41,7 @@ def item_exists(existing_items, item):
 
 def create_cdata_element(tag_name, text):
     element = ET.Element(tag_name)
-    element.text = f"<![CDATA[{text}]]>"
+    element.text = text  # No need to add CDATA here, it will be handled during XML serialization
     return element
 
 def create_rss(feed_config, items):
