@@ -32,12 +32,21 @@ feeds = {feed["number"]: feed for feed in config["feeds"]}
 # Create 'feeds' directory if it doesn't exist
 os.makedirs('feeds', exist_ok=True)
 
-# Load existing XML if it exists, otherwise create a new XML structure
+# Function to escape special characters in text for XML
+def escape_xml_text(text):
+    return text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;').replace("'", '&apos;')
+
+# Function to load existing XML if it exists, otherwise create a new XML structure
 def load_or_create_xml(feed):
     xml_file_path = os.path.join('feeds', feed["xml_file_name"])
     try:
         print(f"Loading XML file: {xml_file_path}")  # Debug print
-        tree = ET.parse(xml_file_path)
+        with open(xml_file_path, 'r', encoding='utf-8') as f:
+            xml_content = f.read()
+
+        # Ensure all special characters are properly escaped
+        xml_content = escape_xml_text(xml_content)
+        tree = ET.ElementTree(ET.fromstring(xml_content))
         root = tree.getroot()
     except FileNotFoundError:
         root = ET.Element("rss", version="2.0")
@@ -82,7 +91,7 @@ def update_xml_with_data(channel, data, include_regex, exclude_regex):
             item = ET.SubElement(channel, "item")
             
             title = ET.SubElement(item, "title")
-            title.text = html.escape(entry["title"])  # Escape special characters
+            title.text = escape_xml_text(entry["title"])  # Escape special characters
             
             link = ET.SubElement(item, "link")
             link.text = entry["torrent_url"]
@@ -97,7 +106,7 @@ def update_xml_with_data(channel, data, include_regex, exclude_regex):
             seeders = entry["seeders"]
             leechers = entry["leechers"]
             anidb = entry["anidb_aid"]
-            hyperlink = f'<a href="https://nyaa.si/view/{entry["nyaa_id"]}">{html.escape(entry["title"])}</a>'
+            hyperlink = f'<a href="https://nyaa.si/view/{entry["nyaa_id"]}">{escape_xml_text(entry["title"])}</a>'
             description_text = f"<![CDATA[{size} | Seeders: {seeders} | Leechers: {leechers} | AniDB: {anidb} | {hyperlink}]]>"
 
             description = ET.Element("description")
