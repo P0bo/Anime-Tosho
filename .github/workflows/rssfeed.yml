@@ -1,22 +1,16 @@
 name: RSS Feeds
 
 on:
-  workflow_dispatch: # Allows manual trigger
-    inputs:
-      feed_no:
-        description: 'Feed number'
-        required: true
-        default: '1'
-        type: integer
-      page_no:
-        description: 'Page number'
-        required: true
-        default: '1'
-        type: integer
+  workflow_dispatch:
 
 jobs:
   update-rss:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        feed_number: [1, 2, 3, 4]
+        start_page: [1]
+        end_page: [1]
 
     steps:
     - name: Checkout repository
@@ -25,14 +19,14 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10' # Adjust the version if necessary
+        python-version: '3.10'
 
     - name: Install dependencies
       run: |
         pip install requests pytz
 
     - name: Run update script
-      run: python rssfeed.py ${{ github.event.inputs.feed_no }} ${{ github.event.inputs.page_no }}
+      run: python rssfeed.py ${{ matrix.feed_number }} ${{ matrix.start_page }} ${{ matrix.end_page }}
 
     - name: Commit and push changes
       env:
