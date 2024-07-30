@@ -5,7 +5,7 @@
       "name": "Ember",
       "xml_file_name": "Ember.xml",
       "link": "https://nyaa.si/user/Ember_Encodes",
-      "api_link": "https://feed.animetosho.org/json?q=%22%5BFeed1%5D%22+-batch+-bd&page=",
+      "api_link": "https://feed.animetosho.org/json?q=%22%5BEmber%5D%22+-batch+-bd&page=",
       "filter": "S\\d+E\\d+"
     },
     {
