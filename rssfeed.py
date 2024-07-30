@@ -39,6 +39,11 @@ def item_exists(existing_items, item):
             return True
     return False
 
+def create_cdata_element(tag, text):
+    element = ET.Element(tag)
+    element.text = text
+    return element
+
 def create_rss(feed_config, items):
     rss = ET.Element("rss", version="2.0")
     channel = ET.SubElement(rss, "channel")
@@ -54,9 +59,7 @@ def create_rss(feed_config, items):
     for item in items:
         item_element = ET.Element("item")
         
-        title_text = ET.CDATA(item['title'])
-        title_element = ET.Element("title")
-        title_element.append(title_text)
+        title_element = create_cdata_element("title", item['title'])
         item_element.append(title_element)
         
         link_element = ET.Element("link")
@@ -80,9 +83,7 @@ def create_rss(feed_config, items):
         item_element.append(pubDate_element)
         
         description_text = f"{item['total_size'] // (1024 * 1024)} MiB | Seeders: {item['seeders']} | Leechers: {item['leechers']} | AniDB: {item['anidb_aid']} | <a href=\"{item['link']}\">{item['title']}</a>"
-        description_text = ET.CDATA(description_text)
-        description_element = ET.Element("description")
-        description_element.append(description_text)
+        description_element = create_cdata_element("description", description_text)
         item_element.append(description_element)
         
         channel.append(item_element)
@@ -115,9 +116,7 @@ def update_rss_file(feed_config, new_items):
         if not item_exists(existing_items, item):
             item_element = ET.Element("item")
             
-            title_text = ET.CDATA(item['title'])
-            title_element = ET.Element("title")
-            title_element.append(title_text)
+            title_element = create_cdata_element("title", item['title'])
             item_element.append(title_element)
             
             link_element = ET.Element("link")
@@ -141,9 +140,7 @@ def update_rss_file(feed_config, new_items):
             item_element.append(pubDate_element)
             
             description_text = f"{item['total_size'] // (1024 * 1024)} MiB | Seeders: {item['seeders']} | Leechers: {item['leechers']} | AniDB: {item['anidb_aid']} | <a href=\"{item['link']}\">{item['title']}</a>"
-            description_text = ET.CDATA(description_text)
-            description_element = ET.Element("description")
-            description_element.append(description_text)
+            description_element = create_cdata_element("description", description_text)
             item_element.append(description_element)
             
             channel.insert(0, item_element)  # Insert at the top
