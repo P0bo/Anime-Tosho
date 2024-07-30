@@ -6,6 +6,7 @@ import xml.etree.ElementTree as ET
 from xml.dom import minidom
 from datetime import datetime
 import sys
+from io import StringIO
 
 def fetch_data(api_link, max_page):
     data = []
@@ -90,25 +91,29 @@ def create_temp_xml(new_items):
         description = ET.SubElement(item_element, "description")
         description.text = f"<![CDATA[{item['total_size'] // (1024 * 1024)} MiB | Seeders: {item['seeders']} | Leechers: {item['leechers']} | AniDB: {item['anidb_aid']} | <a href=\"{item['link']}\">{item['title']}</a>]]>"
     
-    return rss
+    # Convert the ElementTree to a string
+    xml_str = ET.tostring(rss, encoding="utf-8", method="xml")
 
-def merge_xml_files(old_xml_path, temp_xml_path, output_xml_path):
-    with open(old_xml_path, 'r', encoding='utf-8') as old_file:
-        old_data = old_file.read()
+    # Pretty print the XML string
+    pretty_xml_str = minidom.parseString(xml_str).toprettyxml(indent="  ")
 
-    with open(temp_xml_path, 'r', encoding='utf-8') as temp_file:
-        temp_data = temp_file.read()
+    # Remove extra blank lines between elements
+    pretty_xml_str = "\n".join(line for line in pretty_xml_str.splitlines() if line.strip())
 
+    # Fix CDATA section being escaped
+    pretty_xml_str = pretty_xml_str.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&").replace("&quot;", '"')
+
+    return pretty_xml_str
+
+def merge_xml_strings(old_xml_str, temp_xml_str):
     # Extract the RSS channel tag from both old and new XML
-    old_channel = old_data.split('<channel>')[1].split('</channel>')[0]
-    temp_channel = temp_data.split('<channel>')[1].split('</channel>')[0]
+    old_channel = old_xml_str.split('<channel>')[1].split('</channel>')[0]
+    temp_channel = temp_xml_str.split('<channel>')[1].split('</channel>')[0]
 
     # Merge the XML content
-    merged_data = old_data.replace('</channel>', temp_channel + '</channel>')
+    merged_data = old_xml_str.replace('</channel>', temp_channel + '</channel>')
 
-    # Save the merged XML
-    with open(output_xml_path, 'w', encoding='utf-8') as output_file:
-        output_file.write(merged_data)
+    return merged_data
 
 def main(feed_number, max_page):
     with open('config.json') as config_file:
@@ -122,13 +127,13 @@ def main(feed_number, max_page):
     items = fetch_data(feed_config['api_link'], max_page)
     filtered_items = filter_items(items, feed_config['include_regex'], feed_config['exclude_regex'])
     
-    temp_xml_path = 'rssfeed/temp_new_items.xml'
     output_xml_path = os.path.join('rssfeed', feed_config['xml_file_name'])
-    old_xml_path = output_xml_path if os.path.exists(output_xml_path) else None
-    
-    if old_xml_path:
-        with open(old_xml_path, 'r', encoding='utf-8') as old_file:
-            old_ids = extract_ids(json.loads(old_file.read()).get('items', []))
+    old_xml_str = ''
+    if os.path.exists(output_xml_path):
+        with open(output_xml_path, 'r', encoding='utf-8') as old_file:
+            old_xml_str = old_file.read()
+        
+        old_ids = extract_ids(json.loads(old_xml_str).get('items', []))
     else:
         old_ids = set()
     
@@ -140,26 +145,15 @@ def main(feed_number, max_page):
         return
     
     # Create temporary XML for new items
-    temp_rss = create_temp_xml(new_items)
-    temp_xml_str = ET.tostring(temp_rss, encoding="utf-8", method="xml")
-
-    # Pretty print the XML string
-    pretty_xml_str = minidom.parseString(temp_xml_str).toprettyxml(indent="  ")
-
-    # Remove extra blank lines between elements
-    pretty_xml_str = "\n".join(line for line in pretty_xml_str.splitlines() if line.strip())
-
-    # Fix CDATA section being escaped
-    pretty_xml_str = pretty_xml_str.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&").replace("&quot;", '"')
-
-    with open(temp_xml_path, 'w', encoding='utf-8') as temp_file:
-        temp_file.write(pretty_xml_str)
+    temp_xml_str = create_temp_xml(new_items)
     
-    if old_xml_path:
-        merge_xml_files(old_xml_path, temp_xml_path, output_xml_path)
-        os.remove(temp_xml_path)
+    if old_xml_str:
+        merged_xml_str = merge_xml_strings(old_xml_str, temp_xml_str)
+        with open(output_xml_path, 'w', encoding='utf-8') as output_file:
+            output_file.write(merged_xml_str)
     else:
-        os.rename(temp_xml_path, output_xml_path)
+        with open(output_xml_path, 'w', encoding='utf-8') as output_file:
+            output_file.write(temp_xml_str)
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
