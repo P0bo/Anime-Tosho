@@ -32,7 +32,7 @@
       "name": "Erai-HEVC",
       "xml_file_name": "Erai-rawshevc.xml",
       "link": "https://nyaa.si/user/Erai-raws",
-      "api_link": "https://animetosho.org/search?q=%22%5BErai-raws%5D%22%201080p%20HEVC&page=",
+      "api_link": "https://animetosho.org/json?q=%22%5BErai-raws%5D%22%201080p%20HEVC&page=",
       "include_regex": "",
       "exclude_regex": "\\d{2}\\s~\\s\\d{2}"
     }
