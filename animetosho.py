@@ -57,7 +57,7 @@ def get_channel_element(root):
 
 # Function to generate a unique ID for an item
 def generate_item_id(entry):
-    return entry.get("nyaa_id") or entry.get("tosho_id") or entry.get("anidex_id")
+    return str(entry.get("nyaa_id") or entry.get("tosho_id") or entry.get("anidex_id"))
 
 # Function to check if item already exists in the XML by unique ID
 def item_exists(channel, unique_id):
@@ -97,15 +97,15 @@ def update_xml_with_data(channel, data, include_regex, exclude_regex):
             
             if entry.get("nyaa_id"):
                 id_element = ET.SubElement(item, "nyaa_id")
-                id_element.text = entry["nyaa_id"]
+                id_element.text = str(entry["nyaa_id"])
                 hyperlink = f'<a href="https://nyaa.si/view/{entry["nyaa_id"]}">{entry["title"]}</a>'
             elif entry.get("tosho_id"):
                 id_element = ET.SubElement(item, "tosho_id")
-                id_element.text = entry["tosho_id"]
+                id_element.text = str(entry["tosho_id"])
                 hyperlink = f'<a href="https://www.tokyotosho.info/details.php?id={entry["tosho_id"]}">{entry["title"]}</a>'
             elif entry.get("anidex_id"):
                 id_element = ET.SubElement(item, "anidex_id")
-                id_element.text = entry["anidex_id"]
+                id_element.text = str(entry["anidex_id"])
                 hyperlink = f'<a href="https://anidex.info/torrent/{entry["anidex_id"]}">{entry["title"]}</a>'
             
             pubDate = ET.SubElement(item, "pubDate")
