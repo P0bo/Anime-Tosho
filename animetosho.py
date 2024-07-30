@@ -7,6 +7,7 @@ import json
 import re
 import sys
 import os
+import html
 
 # Function to convert timestamp to RFC822 format
 def timestamp_to_rfc822(timestamp):
@@ -81,7 +82,7 @@ def update_xml_with_data(channel, data, include_regex, exclude_regex):
             item = ET.SubElement(channel, "item")
             
             title = ET.SubElement(item, "title")
-            title.text = entry["title"]
+            title.text = html.escape(entry["title"])  # Escape special characters
             
             link = ET.SubElement(item, "link")
             link.text = entry["torrent_url"]
@@ -96,7 +97,7 @@ def update_xml_with_data(channel, data, include_regex, exclude_regex):
             seeders = entry["seeders"]
             leechers = entry["leechers"]
             anidb = entry["anidb_aid"]
-            hyperlink = f'<a href="https://nyaa.si/view/{entry["nyaa_id"]}">{entry["title"]}</a>'
+            hyperlink = f'<a href="https://nyaa.si/view/{entry["nyaa_id"]}">{html.escape(entry["title"])}</a>'
             description_text = f"<![CDATA[{size} | Seeders: {seeders} | Leechers: {leechers} | AniDB: {anidb} | {hyperlink}]]>"
 
             description = ET.Element("description")
