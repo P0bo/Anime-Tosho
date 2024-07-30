@@ -11,7 +11,7 @@
     {
       "number": 2,
       "name": "Namdesuka",
-      "xml_file_name": "Feed2.xml",
+      "xml_file_name": "Nandesuka.xml",
       "link": "https://nyaa.si/user/Nandesuka",  // Channel link
       "api_link": "https://feed.animetosho.org/json?q=1080p+Nandesuka+b+global+-%22h.264%22&page=",  // API link
       "filter": "S\\d+E\\d+"
