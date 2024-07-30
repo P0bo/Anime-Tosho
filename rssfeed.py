@@ -134,6 +134,22 @@ def merge_xml_strings(old_xml_str, temp_xml_str):
 
     return merged_data
 
+def sort_xml_by_pubDate(xml_str):
+    # Extract the items
+    items = re.findall(r'(<item>.*?</item>)', xml_str, re.DOTALL)
+    
+    # Sort items based on pubDate
+    def get_pubDate(item):
+        match = re.search(r'<pubDate>(.*?)</pubDate>', item)
+        return match.group(1) if match else ''
+
+    sorted_items = sorted(items, key=lambda x: datetime.strptime(get_pubDate(x), '%a, %d %b %Y %H:%M:%S +0000'), reverse=True)
+
+    # Rebuild XML with sorted items
+    channel_start = xml_str.find('<channel>')
+    channel_end = xml_str.find('</channel>')
+    return xml_str[:channel_start + len('<channel>')] + ''.join(sorted_items) + xml_str[channel_end:]
+
 def main(feed_number, max_page):
     with open('config.json') as config_file:
         config = json.load(config_file)
@@ -174,8 +190,11 @@ def main(feed_number, max_page):
     # Merge old and new XML
     merged_xml_str = merge_xml_strings(old_xml_str, temp_xml_str)
     
+    # Sort XML by pubDate
+    sorted_xml_str = sort_xml_by_pubDate(merged_xml_str)
+    
     with open(output_xml_path, 'w', encoding='utf-8') as output_file:
-        output_file.write(merged_xml_str)
+        output_file.write(sorted_xml_str)
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
