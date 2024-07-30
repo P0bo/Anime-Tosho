@@ -7,7 +7,6 @@ import json
 import re
 import sys
 import os
-import html
 
 # Function to convert timestamp to RFC822 format
 def timestamp_to_rfc822(timestamp):
@@ -32,21 +31,12 @@ feeds = {feed["number"]: feed for feed in config["feeds"]}
 # Create 'feeds' directory if it doesn't exist
 os.makedirs('feeds', exist_ok=True)
 
-# Function to escape special characters in text for XML
-def escape_xml_text(text):
-    return text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;').replace("'", '&apos;')
-
-# Function to load existing XML if it exists, otherwise create a new XML structure
+# Load existing XML if it exists, otherwise create a new XML structure
 def load_or_create_xml(feed):
     xml_file_path = os.path.join('feeds', feed["xml_file_name"])
     try:
         print(f"Loading XML file: {xml_file_path}")  # Debug print
-        with open(xml_file_path, 'r', encoding='utf-8') as f:
-            xml_content = f.read()
-
-        # Ensure all special characters are properly escaped
-        xml_content = escape_xml_text(xml_content)
-        tree = ET.ElementTree(ET.fromstring(xml_content))
+        tree = ET.parse(xml_file_path)
         root = tree.getroot()
     except FileNotFoundError:
         root = ET.Element("rss", version="2.0")
@@ -65,10 +55,11 @@ def load_or_create_xml(feed):
 def get_channel_element(root):
     return root.find("channel")
 
-# Function to check if item already exists in the XML
-def item_exists(channel, title):
+# Function to check if item already exists in the XML by nyaa_id
+def item_exists(channel, nyaa_id):
     for item in channel.findall("item"):
-        if item.find("title").text == title:
+        guid = item.find("guid").text
+        if guid == nyaa_id:
             return True
     return False
 
@@ -87,17 +78,18 @@ def is_valid_title(title, include_regex, exclude_regex):
 # Function to update XML with new items
 def update_xml_with_data(channel, data, include_regex, exclude_regex):
     for entry in data:
-        if not item_exists(channel, entry["title"]) and is_valid_title(entry["title"], include_regex, exclude_regex):
+        nyaa_id = str(entry["nyaa_id"])
+        if not item_exists(channel, nyaa_id) and is_valid_title(entry["title"], include_regex, exclude_regex):
             item = ET.SubElement(channel, "item")
             
             title = ET.SubElement(item, "title")
-            title.text = escape_xml_text(entry["title"])  # Escape special characters
+            title.text = entry["title"]
             
             link = ET.SubElement(item, "link")
             link.text = entry["torrent_url"]
             
             guid = ET.SubElement(item, "guid", isPermaLink="true")
-            guid.text = entry["torrent_url"]
+            guid.text = nyaa_id
             
             pubDate = ET.SubElement(item, "pubDate")
             pubDate.text = timestamp_to_rfc822(entry["timestamp"])
@@ -106,7 +98,7 @@ def update_xml_with_data(channel, data, include_regex, exclude_regex):
             seeders = entry["seeders"]
             leechers = entry["leechers"]
             anidb = entry["anidb_aid"]
-            hyperlink = f'<a href="https://nyaa.si/view/{entry["nyaa_id"]}">{escape_xml_text(entry["title"])}</a>'
+            hyperlink = f'<a href="https://nyaa.si/view/{nyaa_id}">{entry["title"]}</a>'
             description_text = f"<![CDATA[{size} | Seeders: {seeders} | Leechers: {leechers} | AniDB: {anidb} | {hyperlink}]]>"
 
             description = ET.Element("description")
