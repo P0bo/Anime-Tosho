@@ -1,4 +1,4 @@
-name: RSS Feeds
+name: Scheduled Update
 
 on:
   workflow_dispatch:  # Manual trigger
