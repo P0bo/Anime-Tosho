@@ -60,12 +60,9 @@ def is_valid_title(title, filter_regex):
 
 # Function to update XML with new items
 def update_xml_with_data(channel, data, filter_regex):
-    existing_titles = set(item.find("title").text for item in channel.findall("item"))
-
-    new_items = []
     for entry in data:
-        if entry["title"] not in existing_titles and (not filter_regex or is_valid_title(entry["title"], filter_regex)):
-            item = ET.Element("item")
+        if not item_exists(channel, entry["title"]) and (not filter_regex or is_valid_title(entry["title"], filter_regex)):
+            item = ET.SubElement(channel, "item")
             
             title = ET.SubElement(item, "title")
             title.text = entry["title"]
@@ -90,17 +87,16 @@ def update_xml_with_data(channel, data, filter_regex):
             description.text = description_text
             item.append(description)
 
-            new_items.append(item)
+# Function to sort items based on pubDate
+def sort_items_by_date(channel):
+    items = channel.findall("item")
+    items.sort(key=lambda item: datetime.strptime(item.find("pubDate").text, "%a, %d %b %Y %H:%M:%S %z"), reverse=True)
     
-    # Sort new items by pubDate in descending order
-    new_items.sort(key=lambda x: x.find("pubDate").text, reverse=True)
-    
-    # Clear the existing items in the channel
+    # Remove all items and re-add them in sorted order
     for item in channel.findall("item"):
         channel.remove(item)
-    
-    # Add the sorted items to the channel
-    for item in new_items:
+        
+    for item in items:
         channel.append(item)
 
 # Main function to process pages
@@ -114,6 +110,9 @@ def process_feed(feed, start_page):
         data = fetch_data_from_page(feed["api_link"], page_number)
         update_xml_with_data(channel, data, feed["filter"])
         page_number -= 1
+
+    # Sort items by publication date before saving
+    sort_items_by_date(channel)
 
     # Convert the ElementTree to a string
     xml_str = ET.tostring(root, encoding="utf-8", method="xml")
