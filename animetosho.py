@@ -6,6 +6,7 @@ from xml.dom import minidom
 import json
 import re
 import sys
+import os
 
 # Function to convert timestamp to RFC822 format
 def timestamp_to_rfc822(timestamp):
@@ -27,10 +28,14 @@ def load_config():
 config = load_config()
 feeds = {feed["number"]: feed for feed in config["feeds"]}
 
+# Create 'feeds' directory if it doesn't exist
+os.makedirs('feeds', exist_ok=True)
+
 # Load existing XML if it exists, otherwise create a new XML structure
 def load_or_create_xml(feed):
+    xml_file_path = os.path.join('feeds', feed["xml_file_name"])
     try:
-        tree = ET.parse(feed["xml_file_name"])
+        tree = ET.parse(xml_file_path)
         root = tree.getroot()
     except FileNotFoundError:
         root = ET.Element("rss", version="2.0")
@@ -127,7 +132,8 @@ def process_feed(feed, start_page):
     pretty_xml_str = pretty_xml_str.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&").replace("&quot;", '"')
 
     # Save the pretty printed XML to the file
-    with open(feed["xml_file_name"], "w", encoding="utf-8") as f:
+    xml_file_path = os.path.join('feeds', feed["xml_file_name"])
+    with open(xml_file_path, "w", encoding="utf-8") as f:
         f.write(pretty_xml_str)
 
 # Check if a page number was provided as an argument
