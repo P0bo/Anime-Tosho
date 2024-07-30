@@ -1,4 +1,4 @@
-name: RSS Feeds
+name: Manual Update
 
 on:
   workflow_dispatch:
