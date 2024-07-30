@@ -31,13 +31,21 @@ feeds = {feed["number"]: feed for feed in config["feeds"]}
 # Create 'feeds' directory if it doesn't exist
 os.makedirs('feeds', exist_ok=True)
 
+# Function to validate XML structure
+def validate_xml(file_path):
+    try:
+        ET.parse(file_path)
+        return True
+    except ET.ParseError:
+        return False
+
 # Load existing XML if it exists, otherwise create a new XML structure
 def load_or_create_xml(feed):
     xml_file_path = os.path.join('feeds', feed["xml_file_name"])
-    try:
+    if os.path.exists(xml_file_path) and validate_xml(xml_file_path):
         tree = ET.parse(xml_file_path)
         root = tree.getroot()
-    except FileNotFoundError:
+    else:
         root = ET.Element("rss", version="2.0")
         channel = ET.SubElement(root, "channel")
         title = ET.SubElement(channel, "title")
