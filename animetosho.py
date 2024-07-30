@@ -99,11 +99,12 @@ def update_xml_with_data(channel, data, include_regex, exclude_regex):
             description.text = description_text
             item.append(description)
 
-# Function to sort items by date
+# Function to sort items based on pubDate
 def sort_items_by_date(channel):
     items = channel.findall("item")
     items.sort(key=lambda item: datetime.strptime(item.find("pubDate").text, "%a, %d %b %Y %H:%M:%S %z"), reverse=True)
-
+    
+    # Remove all items and re-add them in sorted order
     for item in channel.findall("item"):
         channel.remove(item)
         
@@ -122,17 +123,27 @@ def process_feed(feed, start_page):
         update_xml_with_data(channel, data, feed.get("include_regex"), feed.get("exclude_regex"))
         page_number -= 1
 
+    # Sort items by publication date before saving
     sort_items_by_date(channel)
 
+    # Convert the ElementTree to a string
     xml_str = ET.tostring(root, encoding="utf-8", method="xml")
+
+    # Pretty print the XML string
     pretty_xml_str = minidom.parseString(xml_str).toprettyxml(indent="  ")
+
+    # Remove extra blank lines between elements
     pretty_xml_str = "\n".join(line for line in pretty_xml_str.splitlines() if line.strip())
+
+    # Fix CDATA section being escaped
     pretty_xml_str = pretty_xml_str.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&").replace("&quot;", '"')
 
+    # Save the pretty printed XML to the file
     xml_file_path = os.path.join('feeds', feed["xml_file_name"])
     with open(xml_file_path, "w", encoding="utf-8") as f:
         f.write(pretty_xml_str)
 
+# Check if a page number was provided as an argument
 if len(sys.argv) > 1:
     try:
         feed_no = int(sys.argv[1])
@@ -144,6 +155,7 @@ else:
     feed_no = 0
     start_page = 1
 
+# Process specified feed or all feeds
 if feed_no == 0:
     for feed in feeds.values():
         process_feed(feed, start_page)
