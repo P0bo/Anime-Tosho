@@ -105,6 +105,9 @@ def process_feed(feed, start_page):
     # Pretty print the XML string
     pretty_xml_str = minidom.parseString(xml_str).toprettyxml(indent="  ")
 
+    # Remove extra blank lines between elements
+    pretty_xml_str = "\n".join(line for line in pretty_xml_str.splitlines() if line.strip())
+
     # Fix CDATA section being escaped
     pretty_xml_str = pretty_xml_str.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&").replace("&quot;", '"')
 
