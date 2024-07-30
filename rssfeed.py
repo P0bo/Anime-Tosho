@@ -39,31 +39,32 @@ def item_exists(existing_items, item):
             return True
     return False
 
-def create_cdata_element(tag_name, text):
-    element = ET.Element(tag_name)
-    element.text = text  # No need to add CDATA here, it will be handled during XML serialization
-    return element
-
 def create_rss(feed_config, items):
     rss = ET.Element("rss", version="2.0")
     channel = ET.SubElement(rss, "channel")
     
-    title_element = create_cdata_element("title", feed_config['name'])
+    title_element = ET.Element("title")
+    title_element.text = feed_config['name']
     channel.append(title_element)
     
-    link_element = create_cdata_element("link", feed_config['link'])
+    link_element = ET.Element("link")
+    link_element.text = feed_config['link']
     channel.append(link_element)
     
     for item in items:
         item_element = ET.Element("item")
         
-        title_element = create_cdata_element("title", item['title'])
+        title_text = ET.CDATA(item['title'])
+        title_element = ET.Element("title")
+        title_element.append(title_text)
         item_element.append(title_element)
         
-        link_element = create_cdata_element("link", item['torrent_url'])
+        link_element = ET.Element("link")
+        link_element.text = item['torrent_url']
         item_element.append(link_element)
         
-        guid_element = create_cdata_element("guid", item['torrent_url'])
+        guid_element = ET.Element("guid")
+        guid_element.text = item['torrent_url']
         item_element.append(guid_element)
         
         id_types = ['nyaa_id', 'nyaa_subdom', 'tosho_id', 'anidex_id']
@@ -74,11 +75,14 @@ def create_rss(feed_config, items):
                 item_element.append(id_element)
                 break
         
-        pubDate_element = create_cdata_element("pubDate", datetime.utcfromtimestamp(item['timestamp']).strftime('%a, %d %b %Y %H:%M:%S +0000'))
+        pubDate_element = ET.Element("pubDate")
+        pubDate_element.text = datetime.utcfromtimestamp(item['timestamp']).strftime('%a, %d %b %Y %H:%M:%S +0000')
         item_element.append(pubDate_element)
         
         description_text = f"{item['total_size'] // (1024 * 1024)} MiB | Seeders: {item['seeders']} | Leechers: {item['leechers']} | AniDB: {item['anidb_aid']} | <a href=\"{item['link']}\">{item['title']}</a>"
-        description_element = create_cdata_element("description", description_text)
+        description_text = ET.CDATA(description_text)
+        description_element = ET.Element("description")
+        description_element.append(description_text)
         item_element.append(description_element)
         
         channel.append(item_element)
@@ -97,10 +101,12 @@ def update_rss_file(feed_config, new_items):
         root = ET.Element("rss", version="2.0")
         channel = ET.SubElement(root, "channel")
         
-        title_element = create_cdata_element("title", feed_config['name'])
+        title_element = ET.Element("title")
+        title_element.text = feed_config['name']
         channel.append(title_element)
         
-        link_element = create_cdata_element("link", feed_config['link'])
+        link_element = ET.Element("link")
+        link_element.text = feed_config['link']
         channel.append(link_element)
         
         existing_items = []
@@ -109,13 +115,17 @@ def update_rss_file(feed_config, new_items):
         if not item_exists(existing_items, item):
             item_element = ET.Element("item")
             
-            title_element = create_cdata_element("title", item['title'])
+            title_text = ET.CDATA(item['title'])
+            title_element = ET.Element("title")
+            title_element.append(title_text)
             item_element.append(title_element)
             
-            link_element = create_cdata_element("link", item['torrent_url'])
+            link_element = ET.Element("link")
+            link_element.text = item['torrent_url']
             item_element.append(link_element)
             
-            guid_element = create_cdata_element("guid", item['torrent_url'])
+            guid_element = ET.Element("guid")
+            guid_element.text = item['torrent_url']
             item_element.append(guid_element)
             
             id_types = ['nyaa_id', 'nyaa_subdom', 'tosho_id', 'anidex_id']
@@ -126,11 +136,14 @@ def update_rss_file(feed_config, new_items):
                     item_element.append(id_element)
                     break
             
-            pubDate_element = create_cdata_element("pubDate", datetime.utcfromtimestamp(item['timestamp']).strftime('%a, %d %b %Y %H:%M:%S +0000'))
+            pubDate_element = ET.Element("pubDate")
+            pubDate_element.text = datetime.utcfromtimestamp(item['timestamp']).strftime('%a, %d %b %Y %H:%M:%S +0000')
             item_element.append(pubDate_element)
             
             description_text = f"{item['total_size'] // (1024 * 1024)} MiB | Seeders: {item['seeders']} | Leechers: {item['leechers']} | AniDB: {item['anidb_aid']} | <a href=\"{item['link']}\">{item['title']}</a>"
-            description_element = create_cdata_element("description", description_text)
+            description_text = ET.CDATA(description_text)
+            description_element = ET.Element("description")
+            description_element.append(description_text)
             item_element.append(description_element)
             
             channel.insert(0, item_element)  # Insert at the top
@@ -143,9 +156,6 @@ def update_rss_file(feed_config, new_items):
 
     # Remove extra blank lines between elements
     pretty_xml_str = "\n".join(line for line in pretty_xml_str.splitlines() if line.strip())
-
-    # Fix CDATA section being escaped
-    pretty_xml_str = pretty_xml_str.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&").replace("&quot;", '"')
 
     with open(file_path, 'w', encoding='utf-8') as file:
         file.write(pretty_xml_str)
