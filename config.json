@@ -6,8 +6,9 @@
       "xml_file_name": "Ember.xml",
       "link": "https://nyaa.si/user/Ember_Encodes",
       "api_link": "https://feed.animetosho.org/json?q=%22%5BEmber%5D%22+-batch+-bd&page=",
-      "include_regex": "S\\d+E\\d+",
-      "exclude_regex": ""
+      "include_regex": "",
+      "exclude_regex": "",
+      "single_file": 1
     },
     {
       "number": 2,
@@ -15,8 +16,9 @@
       "xml_file_name": "Nandesuka.xml",
       "link": "https://nyaa.si/user/Nandesuka",
       "api_link": "https://feed.animetosho.org/json?q=1080p+Nandesuka+b+global+-%22h.264%22&page=",
-      "include_regex": "S\\d+E\\d+",
-      "exclude_regex": ""
+      "include_regex": "",
+      "exclude_regex": "",
+      "single_file": 1
     },
     {
       "number": 3,
@@ -24,8 +26,9 @@
       "xml_file_name": "Nandesuka2.xml",
       "link": "https://nyaa.si/user/Nandesuka",
       "api_link": "https://feed.animetosho.org/json?q=2160p+Nandesuka+b+global+-%22h.264%22&page=",
-      "include_regex": "S\\d+E\\d+",
-      "exclude_regex": ""
+      "include_regex": "",
+      "exclude_regex": "",
+      "single_file": 1
     },
     {
       "number": 4,
@@ -34,9 +37,8 @@
       "link": "https://nyaa.si/user/Erai-raws",
       "api_link": "https://feed.animetosho.org/json?q=%22%5BErai-raws%5D%22%201080p%20HEVC%20-batch&page=",
       "include_regex": "",
-      "exclude_regex": "\\d{2}\\s~\\s\\d{2}"
+      "exclude_regex": "\\d{2}\\s~\\s\\d{2}",
+      "single_file": 1
     }
-
-
   ]
 }
