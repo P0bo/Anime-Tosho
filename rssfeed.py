@@ -19,17 +19,27 @@ def fetch_data(api_link, page_number):
         print(f"Failed to fetch data from {url}, error: {e}")
         return []  # Return empty list on failure
 
-def filter_entries(entries, include_regex, exclude_regex):
+def filter_entries(entries, include_regex, exclude_regex, single_file):
     filtered_entries = []
     include_pattern = re.compile(include_regex) if include_regex else None
     exclude_pattern = re.compile(exclude_regex) if exclude_regex else None
 
     for entry in entries:
         title = entry.get("title", "")
+        num_files = entry.get("num_files", 0)
+
+        # Apply regex filters
         if include_pattern and not include_pattern.search(title):
             continue
         if exclude_pattern and exclude_pattern.search(title):
             continue
+
+        # Apply single file filter
+        if single_file == 1 and num_files != 1:
+            continue
+        if single_file == 0 and num_files <= 1:
+            continue
+
         filtered_entries.append(entry)
 
     return filtered_entries
@@ -86,7 +96,8 @@ def create_xml_entries(feed_name, feed_link, entries, existing_ids):
             id_info = f"AniDex: {anidex_id}"
             hyperlink = f'<a href="https://anidex.info/torrent/{anidex_id}">{title}</a>'
 
-        description_content = f"{size_str} | Seeders: {seeders} | Leechers: {leechers} | AniDB: {anidb_aid} | {id_info} | {hyperlink}"
+        file_info = f"Files: {entry['num_files']}" if entry['num_files'] > 1 else "File: 1"
+        description_content = f"{size_str} | {file_info} | Seeders: {seeders} | Leechers: {leechers} | AniDB: {anidb_aid} | {id_info} | {hyperlink}"
 
         pub_date = datetime.utcfromtimestamp(timestamp).strftime('%a, %d %b %Y %H:%M:%S +0000')
 
@@ -164,7 +175,12 @@ def main():
 
         entries = fetch_data(selected_feed['api_link'], page_number)
 
-        filtered_entries = filter_entries(entries, selected_feed['include_regex'], selected_feed['exclude_regex'])
+        filtered_entries = filter_entries(
+            entries, 
+            selected_feed['include_regex'], 
+            selected_feed['exclude_regex'], 
+            selected_feed['single_file']
+        )
 
         new_entries = create_xml_entries(selected_feed['name'], selected_feed['link'], filtered_entries, existing_ids)
 
