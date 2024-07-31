@@ -37,7 +37,7 @@
       "link": "https://nyaa.si/user/Erai-raws",
       "api_link": "https://feed.animetosho.org/json?q=%22%5BErai-raws%5D%22%201080p%20HEVC%20-batch&page=",
       "include_regex": "",
-      "exclude_regex": "\\d{2}\\s~\\s\\d{2}",
+      "exclude_regex": "",
       "single_file": 1
     }
   ]
