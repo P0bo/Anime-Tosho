@@ -16,7 +16,7 @@
       "xml_file_name": "Nandesuka.xml",
       "link": "https://nyaa.si/user/Nandesuka",
       "api_link": "https://feed.animetosho.org/json?q=1080p+Nandesuka+b+global+-%22h.264%22&page=",
-      "include_regex": "",
+      "include_regex": "S\\d+E\\d+",
       "exclude_regex": "",
       "single_file": 1
     },
@@ -26,7 +26,7 @@
       "xml_file_name": "Nandesuka.xml",
       "link": "https://nyaa.si/user/Nandesuka",
       "api_link": "https://feed.animetosho.org/json?q=2160p+Nandesuka+b+global+-%22h.264%22&page=",
-      "include_regex": "",
+      "include_regex": "S\\d+E\\d+",
       "exclude_regex": "",
       "single_file": 1
     },
