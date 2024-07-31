@@ -3,7 +3,7 @@ name: Scheduled Update
 on:
   workflow_dispatch:  # Manual trigger
   schedule:           # Scheduled trigger
-    - cron: '*/30 * * * *'  # Run every 30 minutes
+    - cron: '0 * * * *'  # Run every 30 minutes
 
 jobs:
   update-rss:
