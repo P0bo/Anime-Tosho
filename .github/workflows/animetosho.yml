@@ -8,6 +8,7 @@ on:
         required: true
         type: choice
         options:
+          - Airing
           - Ember
           - Nandesuka
           - Nandesuka2
@@ -43,7 +44,9 @@ jobs:
       id: set-feed-details
       run: |
         echo "FEED_NAME=${{ github.event.inputs.feed_name }}" >> $GITHUB_ENV
-        if [ "${{ github.event.inputs.feed_name }}" == "Ember" ]; then
+        if [ "${{ github.event.inputs.feed_name }}" == "Airing" ]; then
+          echo "FEED_NUMBER=0" >> $GITHUB_ENV
+          elif [ "${{ github.event.inputs.feed_name }}" == "Ember" ]; then
           echo "FEED_NUMBER=1" >> $GITHUB_ENV
         elif [ "${{ github.event.inputs.feed_name }}" == "Nandesuka" ]; then
           echo "FEED_NUMBER=2" >> $GITHUB_ENV
