@@ -213,14 +213,18 @@ def main():
 
         print(f"Page {page_number}: Processed {len(new_entries)} new entries.")
 
-    merged_xml = merge_xml_data(existing_xml, all_new_entries, selected_feed['name'], selected_feed['link'])
+    # Only merge and write to file if there are new entries
+    if all_new_entries:
+        merged_xml = merge_xml_data(existing_xml, all_new_entries, selected_feed['name'], selected_feed['link'])
 
-    file_path = os.path.join('rssfeed', selected_feed['xml_file_name'])
-    os.makedirs(os.path.dirname(file_path), exist_ok=True)
-    with open(file_path, 'w', encoding='utf-8') as f:
-        f.write(merged_xml)
+        file_path = os.path.join('rssfeed', selected_feed['xml_file_name'])
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(merged_xml)
 
-    print(f"Total new entries merged: {len(all_new_entries)}")
+        print(f"Total new entries merged: {len(all_new_entries)}")
+    else:
+        print("No new entries to merge. The XML file was not modified.")
 
 if __name__ == "__main__":
     main()
