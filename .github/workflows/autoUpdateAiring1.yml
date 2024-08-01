@@ -23,6 +23,10 @@ jobs:
     - name: Delay for 15 minutes
       run: sleep 900  # 900 seconds is 15 minutes
 
+    - name: Pull latest changes
+      run: |
+        git pull origin main --rebase
+
     - name: Run update script for Feed 1
       run: python rssfeed.py 1 1 1
 
