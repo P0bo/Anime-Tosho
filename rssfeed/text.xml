@@ -1,0 +1,12 @@
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+<channel>
+<title>Trending JavaScript repositories on GitHub today · GitHub</title>
+<item>
+<title>fastify/fastify</title>
+<description><img src="https://repository-images.githubusercontent.com/69495170/8125e100-61bc-11e9-8d9f-eb01f522f962" referrerpolicy="no-referrer"><br>Fast and low overhead web framework, for Node.js <br><br>Language: JavaScript <br>Stars: 31518 <br>Forks: 2240</description>
+<link>https://github.com/fastify/fastify</link>
+<guid isPermaLink="false">https://github.com/fastify/fastify</guid>
+<author>fastify</author>
+</item>
+</channel>
+</rss>
