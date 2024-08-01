@@ -19,7 +19,7 @@ def fetch_data(api_link, page_number):
         print(f"Failed to fetch data from {url}, error: {e}")
         return []  # Return empty list on failure
 
-def filter_entries(entries, include_regex, exclude_regex, single_file):
+def filter_entries(entries, include_regex, exclude_regex, single_file, images):
     filtered_entries = []
     include_pattern = re.compile(include_regex) if include_regex else None
     exclude_pattern = re.compile(exclude_regex) if exclude_regex else None
@@ -40,6 +40,11 @@ def filter_entries(entries, include_regex, exclude_regex, single_file):
         if single_file == 0 and num_files <= 1:
             continue
 
+        # Check if the feed has images defined and filter accordingly
+        if images:
+            anidb_aid = entry.get('anidb_aid')
+            if not anidb_aid or str(anidb_aid) not in images:
+                continue  # Skip entries without defined images
         filtered_entries.append(entry)
 
     return filtered_entries
@@ -193,17 +198,18 @@ def main():
 
         entries = fetch_data(selected_feed['api_link'], page_number)
 
-        filtered_entries = filter_entries(
-            entries, 
-            selected_feed['include_regex'], 
-            selected_feed['exclude_regex'], 
-            selected_feed['single_file']
-        )
-
         # Extract images mapping if exists
         images = {}
         if 'image' in selected_feed:
             images = selected_feed['image'][0]  # Assuming single image mapping for the feed
+
+        filtered_entries = filter_entries(
+            entries, 
+            selected_feed['include_regex'], 
+            selected_feed['exclude_regex'], 
+            selected_feed['single_file'],
+            images
+        )
 
         new_entries = create_xml_entries(selected_feed['name'], selected_feed['link'], filtered_entries, existing_ids, images)
 
