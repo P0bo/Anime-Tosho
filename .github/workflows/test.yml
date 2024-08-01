@@ -1,0 +1,25 @@
+name: Manual Trigger Dispatch Event
+
+on:
+  workflow_dispatch:
+    inputs:
+      event_type:
+        description: 'Type of event to trigger'
+        required: true
+        type: string
+        default: 'trigger-feed-1'
+
+jobs:
+  trigger-dispatch:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Trigger Dispatch Event
+      run: |
+        curl -X POST -H "Accept: application/vnd.github.everest-preview+json" \
+        -H "Authorization: token ${{ secrets.GH_PAT }}" \
+        https://api.github.com/repos/${{ github.repository }}/dispatches \
+        -d '{"event_type":"${{ github.event.inputs.event_type }}"}'
