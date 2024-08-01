@@ -1,6 +1,21 @@
 {
   "feeds": [
     {
+      "number": 0,
+      "name": "Seasonal Watchlist",
+      "xml_file_name": "airing.xml",
+      "link": "https://myanimelist.net/profile/p0bo",
+      "api_link": "https://feed.animetosho.org/json?qx=1&q=%22h+265%22%7C%22x265%22%7C%22hevc%22%7C%22av1%22+1080p&aids=18518%2C18133%2C17909%2C18482%2C17559%2C18534%2C17221%2C17965%2C17507%2C16828%2C18427%2C18086%2C17914%2C18098%2C17529%2C18266%2C17982%2C18438%2C17760%2C17709&page=",
+      "include_regex": "",
+      "exclude_regex": "",
+      "single_file": 1,
+      "image":[
+        {
+          "18086":304486
+        }
+      ]
+    }
+    {
       "number": 1,
       "name": "Ember",
       "xml_file_name": "Ember.xml",
@@ -39,16 +54,7 @@
       "include_regex": "",
       "exclude_regex": "",
       "single_file": 1
-    },
-    {
-      "number": 0,
-      "name": "Seasonal Watchlist",
-      "xml_file_name": "airing.xml",
-      "link": "https://myanimelist.net/profile/p0bo",
-      "api_link": "https://feed.animetosho.org/json?qx=1&q=%22h+265%22%7C%22x265%22%7C%22hevc%22%7C%22av1%22+1080p&aids=18518%2C18133%2C17909%2C18482%2C17559%2C18534%2C17221%2C17965%2C17507%2C16828%2C18427%2C18086%2C17914%2C18098%2C17529%2C18266%2C17982%2C18438%2C17760%2C17709&page=",
-      "include_regex": "",
-      "exclude_regex": "",
-      "single_file": 1
     }
   ]
 }
+
