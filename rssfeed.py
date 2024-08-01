@@ -158,7 +158,6 @@ def merge_xml_data(existing_xml, new_entries, feed_name, feed_link):
     # Insert new entries inside the <channel> tags
     merged_xml = (
         existing_xml[:channel_end] +
-        "\n" +
         "\n".join(new_entries) +
         "\n" +
         existing_xml[channel_end:]
