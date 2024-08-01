@@ -5,6 +5,44 @@
       "name": "Seasonal Watchlist",
       "xml_file_name": "airing.xml",
       "link": "https://myanimelist.net/profile/p0bo",
+      "api_link": "https://feed.animetosho.org/json?page=",
+      "include_regex": "(?i)(1080p.*(h\\.265|x265|hevc|av1)|(h\\.265|x265|hevc|av1).*1080p)",
+      "exclude_regex": "",
+      "single_file": 1,
+      "image":[
+        {
+          "18086":304486,
+          "18427":301082,
+          "17914":301662,
+          "17221":302190,
+          "17965":300344,
+          "18098":304978,
+          "17529":305433,
+          "18266":304047,
+          "17982":305073,
+          "18438":305324,
+          "17760":303839,
+          "17709":297217,
+          "18134":305068,
+          "17931":301316,
+          "18172":305166,
+          "18518":303565,
+          "18133":303714,
+          "17909":297215,
+          "18482":305533,
+          "17559":305415,
+          "18534":304562,
+          "17507":304865,
+          "16828":304867
+          
+        }
+      ]
+    },
+    {
+      "number": 1,
+      "name": "Seasonal Watchlist",
+      "xml_file_name": "airing.xml",
+      "link": "https://myanimelist.net/profile/p0bo",
       "api_link": "https://feed.animetosho.org/json?qx=1&q=%22h+265%22%7C%22x265%22%7C%22hevc%22%7C%22av1%22+1080p&aids=18518%2C18133%2C17909%2C18482%2C17559%2C18534%2C17221%2C17965%2C17507%2C16828%2C18427%2C18086%2C17914%2C18098%2C17529%2C18266%2C17982%2C18438%2C17760%2C17709&page=",
       "include_regex": "",
       "exclude_regex": "",
@@ -39,7 +77,7 @@
       ]
     },
     {
-      "number": 1,
+      "number": 2,
       "name": "Ember",
       "xml_file_name": "Ember.xml",
       "link": "https://nyaa.si/user/Ember_Encodes",
@@ -49,7 +87,7 @@
       "single_file": 1
     },
     {
-      "number": 2,
+      "number": 3,
       "name": "Nandesuka",
       "xml_file_name": "Nandesuka.xml",
       "link": "https://nyaa.si/user/Nandesuka",
@@ -59,7 +97,7 @@
       "single_file": 1
     },
     {
-      "number": 3,
+      "number": 4,
       "name": "Nandesuka",
       "xml_file_name": "Nandesuka2.xml",
       "link": "https://nyaa.si/user/Nandesuka",
@@ -69,7 +107,7 @@
       "single_file": 1
     },
     {
-      "number": 4,
+      "number": 5,
       "name": "Erai-HEVC",
       "xml_file_name": "Erai-rawshevc.xml",
       "link": "https://nyaa.si/user/Erai-raws",
@@ -77,7 +115,9 @@
       "include_regex": "",
       "exclude_regex": "",
       "single_file": 1
-    }
+    }    
   ]
 }
+
+
 
