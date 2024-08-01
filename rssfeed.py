@@ -59,8 +59,10 @@ def extract_existing_ids(existing_xml):
     id_pattern = re.compile(r'<id>(\d+)</id>')
     return set(id_pattern.findall(existing_xml))
 
-def create_xml_entries(feed_name, feed_link, entries, existing_ids):
+def create_xml_entries(feed_name, feed_link, entries, existing_ids, images):
     new_entries = []
+    images_added_count = 0  # Counter for added images
+
     for entry in entries:
         entry_id = str(entry['id'])
         # Skip if entry ID already exists
@@ -77,7 +79,7 @@ def create_xml_entries(feed_name, feed_link, entries, existing_ids):
         seeders = entry['seeders']
         leechers = entry['leechers']
 
-        anidb_aid = entry['anidb_aid'] if entry.get('anidb_aid') else "N/A"
+        anidb_aid = entry.get('anidb_aid', "N/A")  # Ensure there's a default value
 
         nyaa_id = entry.get("nyaa_id")
         tosho_id = entry.get("tosho_id")
@@ -97,7 +99,17 @@ def create_xml_entries(feed_name, feed_link, entries, existing_ids):
             hyperlink = f'<a href="https://anidex.info/torrent/{anidex_id}">{title}</a>'
 
         file_info = f"Files: {entry['num_files']}" if entry['num_files'] > 1 else "File: 1"
-        description_content = f"{size_str} | {file_info} | Seeders: {seeders} | Leechers: {leechers} | AniDB: {anidb_aid} | {id_info} | {hyperlink}"
+        
+        # Check for image based on AniDB ID
+        image_tag = ""
+        # Convert AniDB ID to string to match JSON keys
+        anidb_aid_str = str(anidb_aid)
+        if anidb_aid_str in images:
+            image_id = images[anidb_aid_str]
+            image_tag = f'<br><img src="https://cdn-eu.anidb.net/images/main/{image_id}.jpg" alt="Image" />'
+            images_added_count += 1  # Increment the image counter
+
+        description_content = f"{size_str} | {file_info} | Seeders: {seeders} | Leechers: {leechers} | AniDB: {anidb_aid} | {id_info} | {hyperlink}{image_tag}"
 
         pub_date = datetime.utcfromtimestamp(timestamp).strftime('%a, %d %b %Y %H:%M:%S +0000')
 
@@ -111,6 +123,12 @@ def create_xml_entries(feed_name, feed_link, entries, existing_ids):
   <description><![CDATA[{description_content}]]></description>
 </item>"""
         new_entries.append(new_entry.strip())
+
+    # Print the total number of images added
+    if images_added_count > 0:
+        print(f"Total Images added: {images_added_count}")
+    else:
+        print("No Images added")
 
     return new_entries
 
@@ -182,7 +200,12 @@ def main():
             selected_feed['single_file']
         )
 
-        new_entries = create_xml_entries(selected_feed['name'], selected_feed['link'], filtered_entries, existing_ids)
+        # Extract images mapping if exists
+        images = {}
+        if 'image' in selected_feed:
+            images = selected_feed['image'][0]  # Assuming single image mapping for the feed
+
+        new_entries = create_xml_entries(selected_feed['name'], selected_feed['link'], filtered_entries, existing_ids, images)
 
         existing_ids.update(entry['id'] for entry in filtered_entries)
 
