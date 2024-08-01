@@ -9,6 +9,7 @@ on:
         type: choice
         options:
           - Airing
+          - Airing2
           - Ember
           - Nandesuka
           - Nandesuka2
@@ -46,14 +47,16 @@ jobs:
         echo "FEED_NAME=${{ github.event.inputs.feed_name }}" >> $GITHUB_ENV
         if [ "${{ github.event.inputs.feed_name }}" == "Airing" ]; then
           echo "FEED_NUMBER=0" >> $GITHUB_ENV
-          elif [ "${{ github.event.inputs.feed_name }}" == "Ember" ]; then
+          elif [ "${{ github.event.inputs.feed_name }}" == "Airing2" ]; then
           echo "FEED_NUMBER=1" >> $GITHUB_ENV
-        elif [ "${{ github.event.inputs.feed_name }}" == "Nandesuka" ]; then
+          elif [ "${{ github.event.inputs.feed_name }}" == "Ember" ]; then
           echo "FEED_NUMBER=2" >> $GITHUB_ENV
-        elif [ "${{ github.event.inputs.feed_name }}" == "Nandesuka2" ]; then
+        elif [ "${{ github.event.inputs.feed_name }}" == "Nandesuka" ]; then
           echo "FEED_NUMBER=3" >> $GITHUB_ENV
-        elif [ "${{ github.event.inputs.feed_name }}" == "Erai-HEVC" ]; then
+        elif [ "${{ github.event.inputs.feed_name }}" == "Nandesuka2" ]; then
           echo "FEED_NUMBER=4" >> $GITHUB_ENV
+        elif [ "${{ github.event.inputs.feed_name }}" == "Erai-HEVC" ]; then
+          echo "FEED_NUMBER=5" >> $GITHUB_ENV
         else
           echo "Unknown feed name"
           exit 1
