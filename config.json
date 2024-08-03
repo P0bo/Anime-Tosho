@@ -43,7 +43,7 @@
       "name": "Seasonal Watchlist",
       "xml_file_name": "airing.xml",
       "link": "https://myanimelist.net/profile/p0bo",
-      "api_link": "https://feed.animetosho.org/json?qx=1&q=%22h+265%22%7C%22x265%22%7C%22hevc%22%7C%22av1%22+1080p&aids=17931&page=",
+      "api_link": "https://feed.animetosho.org/json?qx=1&q=%22h+265%22%7C%22x265%22%7C%22hevc%22%7C%22av1%22+1080p&aids=&page=",
       "include_regex": "",
       "exclude_regex": "",
       "single_file": 1,
