@@ -21,7 +21,7 @@ jobs:
         pip install requests pytz
 
     - name: Run update script for Feed 0
-      run: python rssfeed.py 0 1 1
+      run: python toshofeed.py 0 1 1
 
     - name: Commit and push changes
       env:
