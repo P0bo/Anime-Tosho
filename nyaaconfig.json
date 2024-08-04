@@ -1,96 +1,86 @@
 {
-  "feeds": [
-   
-    {
-      "number": 1,
-      "name": "Nyaa",
-      "xml_file_name": "nyaa.xml",
-      "link": "https://nyaa.land/",
-      "api_link": "https://nyaa.si/?page=rss&q=1080p+b+global+-h.264&c=1_2&f=0&u=NanDesuKa",
-      "include_regex": "(?i)(1080p.*(h\\.265|x265|hevc|av1)|(h\\.265|x265|hevc|av1).*1080p)",
-      "exclude_regex": ""
-    },
-    {
-      "number": 2,
-      "name": "Judas",
-      "xml_file_name": "nyaa.xml",
-      "link": "https://nyaa.land/",
-      "api_link": "https://nyaa.si/?page=rss&q=1080p+-Batch&c=1_2&f=0&u=Judas",
-      "include_regex": "S\\d+E\\d+",
-      "exclude_regex": ""
-    },
-    {
-      "number": 3,
-      "name": "AkihitoSubsWeeklies",
-      "xml_file_name": "nyaa.xml",
-      "link": "https://nyaa.land/",
-      "api_link": "https://nyaa.si/?page=rss&q=1080p+-batch&c=1_2&f=0&u=AkihitoSubsWeeklies",
-      "include_regex": "\\s-\\s\\d+",
-      "exclude_regex": ""
-    },
-    {
-      "number": 4,
-      "name": "NanDesuKa",
-      "xml_file_name": "nyaa.xml",
-      "link": "https://nyaa.land/",
-      "api_link": "https://nyaa.si/?page=rss&q=1080p+b+global+-h.264&c=1_2&f=0&u=NanDesuKa",
-      "include_regex": "(?i)(1080p.*(h\\.265|x265|hevc|av1)|(h\\.265|x265|hevc|av1).*1080p)",
-      "exclude_regex": ""
-    },
-    {
-      "number": 5,
-      "name": "Erai-HEVC",
-      "xml_file_name": "nyaa.xml",
-      "link": "https://nyaa.land/",
-      "api_link": "https://nyaa.si/?page=rss&q=1080p+hevc+-batch+-bd&c=1_2&f=0&u=Erai-raws",
-      "include_regex": "",
-      "exclude_regex": "\\d+\\s~\\s\\d+"
-    },
-    {
-      "number": 6,
-      "name": "DKB",
-      "xml_file_name": "nyaa.xml",
-      "link": "https://nyaa.land/",
-      "api_link": "https://nyaa.si/?page=rss&q=week&c=1_2&f=0&u=DKB0512",
-      "include_regex": "",
-      "exclude_regex": ""
-    },
-    {
-      "number": 7,
-      "name": "Ember",
-      "xml_file_name": "nyaa.xml",
-      "link": "https://nyaa.land/",
-      "api_link": "https://nyaa.si/?page=rss&q=-batch+-bd&c=1_2&f=0&u=Ember_Encodes",
-      "include_regex": "S\\d+E\\d",
-      "exclude_regex": ""
-    },
-    {
-      "number": 8,
-      "name": "Ironclad",
-      "xml_file_name": "nyaa.xml",
-      "link": "https://nyaa.land/",
-      "api_link": "https://nyaa.si/?page=rss&q=week+-batch+-bd&c=1_2&f=0&u=Ironclad",
-      "include_regex": "",
-      "exclude_regex": ""
-    },
-    {
-      "number": 9,
-      "name": "[New]-Raws",
-      "xml_file_name": "nyaa.xml",
-      "link": "https://nyaa.land/",
-      "api_link": "https://nyaa.si/?page=rss&q=%22%5BNew-raws%5D%22&c=1_2&f=0",
-      "include_regex": "",
-      "exclude_regex": "\\d+\\s*~\\s*\\d+"
-    },
-    {
-      "number": 10,
-      "name": "New-[Raws]",
-      "xml_file_name": "nyaa.xml",
-      "link": "https://nyaa.land/",
-      "api_link": "https://nyaa.si/?page=rss&q=%22%5BNew-raws%5D%22&c=1_4&f=0",
-      "include_regex": "",
-      "exclude_regex": "\\d+\\s*~\\s*\\d+"
-    }
-  ]
-}
-
+    "feeds": [
+      {
+        "number": 1,
+        "name": "Judas",
+        "xml_file_name": "nyaa.xml",
+        "link": "https://nyaa.land/",
+        "api_link": "https://nyaa.si/?page=rss&q=1080p+-Batch&c=1_2&f=0&u=Judas",
+        "include_regex": "S\\d+E\\d+",
+        "exclude_regex": ""
+      },
+      {
+        "number": 2,
+        "name": "AkihitoSubsWeeklies",
+        "xml_file_name": "nyaa.xml",
+        "link": "https://nyaa.land/",
+        "api_link": "https://nyaa.si/?page=rss&q=1080p+-batch&c=1_2&f=0&u=AkihitoSubsWeeklies",
+        "include_regex": "\\s-\\s\\d+",
+        "exclude_regex": ""
+      },
+      {
+        "number": 3,
+        "name": "NanDesuKa",
+        "xml_file_name": "nyaa.xml",
+        "link": "https://nyaa.land/",
+        "api_link": "https://nyaa.si/?page=rss&q=1080p+b+global+-h.264&c=1_2&f=0&u=NanDesuKa",
+        "include_regex": "(?i)(1080p.*(h\\.265|x265|hevc|av1)|(h\\.265|x265|hevc|av1).*1080p)",
+        "exclude_regex": ""
+      },
+      {
+        "number": 4,
+        "name": "Erai-HEVC",
+        "xml_file_name": "nyaa.xml",
+        "link": "https://nyaa.land/",
+        "api_link": "https://nyaa.si/?page=rss&q=1080p+hevc+-batch+-bd&c=1_2&f=0&u=Erai-raws",
+        "include_regex": "",
+        "exclude_regex": "\\d+\\s~\\s\\d+"
+      },
+      {
+        "number": 5,
+        "name": "DKB",
+        "xml_file_name": "nyaa.xml",
+        "link": "https://nyaa.land/",
+        "api_link": "https://nyaa.si/?page=rss&q=week&c=1_2&f=0&u=DKB0512",
+        "include_regex": "",
+        "exclude_regex": ""
+      },
+      {
+        "number": 6,
+        "name": "Ember",
+        "xml_file_name": "nyaa.xml",
+        "link": "https://nyaa.land/",
+        "api_link": "https://nyaa.si/?page=rss&q=-batch+-bd&c=1_2&f=0&u=Ember_Encodes",
+        "include_regex": "S\\d+E\\d",
+        "exclude_regex": ""
+      },
+      {
+        "number": 7,
+        "name": "Ironclad",
+        "xml_file_name": "nyaa.xml",
+        "link": "https://nyaa.land/",
+        "api_link": "https://nyaa.si/?page=rss&q=week+-batch+-bd&c=1_2&f=0&u=Ironclad",
+        "include_regex": "",
+        "exclude_regex": ""
+      },
+      {
+        "number": 8,
+        "name": "[New]-Raws",
+        "xml_file_name": "nyaa.xml",
+        "link": "https://nyaa.land/",
+        "api_link": "https://nyaa.si/?page=rss&q=%22%5BNew-raws%5D%22&c=1_2&f=0",
+        "include_regex": "",
+        "exclude_regex": "\\d+\\s*~\\s*\\d+"
+      },
+      {
+        "number": 9,
+        "name": "New-[Raws]",
+        "xml_file_name": "nyaa.xml",
+        "link": "https://nyaa.land/",
+        "api_link": "https://nyaa.si/?page=rss&q=%22%5BNew-raws%5D%22&c=1_4&f=0",
+        "include_regex": "",
+        "exclude_regex": "\\d+\\s*~\\s*\\d+"
+      }
+    ]
+  }
+  
