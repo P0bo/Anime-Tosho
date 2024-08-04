@@ -54,10 +54,16 @@
       "api_link": "https://nyaa.si/?page=rss&q=weekly&c=0_0&f=0&u=DKB0512",
       "include_regex": "",
       "exclude_regex": ""
+    },
+    {
+      "number": 7,
+      "name": "Ember",
+      "xml_file_name": "nyaa.xml",
+      "link": "https://nyaa.land/",
+      "api_link": "https://nyaa.si/?page=rss&q=-batch+-bd&c=0_0&f=0&u=Ember_Encodes",
+      "include_regex": "S\\d+E\\d",
+      "exclude_regex": ""
     }
   ]
 }
-
-
-
 
