@@ -40,3 +40,11 @@ jobs:
           git commit -m "Update RSS feed" || echo "No changes to commit"
           git pull origin main --rebase
           git push https://x-access-token:${{ secrets.GH_PAT }}@github.com/${{ github.repository }}.git
+
+
+      - name: Trigger next workflow
+        run: |
+          curl -X POST -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ secrets.GH_PAT }}" \
+            https://api.github.com/repos/${{ github.repository }}/dispatches \
+            -d '{"event_type":"trigger-feed-1"}'
