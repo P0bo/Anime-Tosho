@@ -28,7 +28,7 @@ jobs:
         git pull origin main --rebase
 
     - name: Run update script for Feed 1
-      run: python rssfeed.py 1 1 1
+      run: python toshofeed.py 1 1 1
 
     - name: Commit and push changes
       env:
