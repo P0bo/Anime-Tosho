@@ -1,1 +1,48 @@
+{
+  "feeds": [
+   
+    {
+      "number": 1,
+      "name": "Nyaa",
+      "xml_file_name": "nyaa.xml",
+      "link": "https://nyaa.land/",
+      "api_link": "https://nyaa.si/?page=rss&q=1080p+b+global+-h.264&c=1_2&f=0&u=NanDesuKa",
+      "include_regex": "(?i)(1080p.*(h\\.265|x265|hevc|av1)|(h\\.265|x265|hevc|av1).*1080p)",
+      "exclude_regex": ""
+    },
+    {
+      "number": 3,
+      "name": "Nandesuka",
+      "xml_file_name": "Nandesuka.xml",
+      "link": "https://nyaa.si/user/Nandesuka",
+      "api_link": "https://feed.animetosho.org/json?q=1080p+Nandesuka+b+global+-%22h.264%22&page=",
+      "include_regex": "S\\d+E\\d+",
+      "exclude_regex": "",
+      "single_file": 1
+    },
+    {
+      "number": 4,
+      "name": "Nandesuka",
+      "xml_file_name": "Nandesuka2.xml",
+      "link": "https://nyaa.si/user/Nandesuka",
+      "api_link": "https://feed.animetosho.org/json?q=2160p+Nandesuka+b+global+-%22h.264%22&page=",
+      "include_regex": "S\\d+E\\d+",
+      "exclude_regex": "",
+      "single_file": 1
+    },
+    {
+      "number": 5,
+      "name": "Erai-HEVC",
+      "xml_file_name": "Erai-rawshevc.xml",
+      "link": "https://nyaa.si/user/Erai-raws",
+      "api_link": "https://feed.animetosho.org/json?q=%22%5BErai-raws%5D%22%201080p%20HEVC%20-batch&page=",
+      "include_regex": "",
+      "exclude_regex": "",
+      "single_file": 1
+    }    
+  ]
+}
+
+
+
 
