@@ -45,6 +45,15 @@
       "api_link": "https://nyaa.si/?page=rss&q=1080p+hevc+-batch+-bd&c=1_2&f=0&u=Erai-raws",
       "include_regex": "",
       "exclude_regex": "\\d+\\s~\\s\\d+"
+    },
+    {
+      "number": 6,
+      "name": "DKB",
+      "xml_file_name": "nyaa.xml",
+      "link": "https://nyaa.land/",
+      "api_link": "https://nyaa.si/?page=rss&q=weekly&c=0_0&f=0&u=DKB0512",
+      "include_regex": "",
+      "exclude_regex": ""
     }
   ]
 }
