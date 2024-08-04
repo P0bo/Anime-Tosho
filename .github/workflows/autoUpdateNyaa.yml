@@ -1,8 +1,9 @@
 name: Auto Update Nyaa
 
 on:
-  repository_dispatch:
-    types: [trigger-nyaa]
+
+  schedule:
+    - cron: '*/30 * * * *'
 
 jobs:
   update-rss:
