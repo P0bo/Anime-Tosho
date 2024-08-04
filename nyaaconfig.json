@@ -51,7 +51,7 @@
       "name": "DKB",
       "xml_file_name": "nyaa.xml",
       "link": "https://nyaa.land/",
-      "api_link": "https://nyaa.si/?page=rss&q=week&c=0_0&f=0&u=DKB0512",
+      "api_link": "https://nyaa.si/?page=rss&q=week&c=1_2&f=0&u=DKB0512",
       "include_regex": "",
       "exclude_regex": ""
     },
@@ -60,7 +60,7 @@
       "name": "Ember",
       "xml_file_name": "nyaa.xml",
       "link": "https://nyaa.land/",
-      "api_link": "https://nyaa.si/?page=rss&q=-batch+-bd&c=0_0&f=0&u=Ember_Encodes",
+      "api_link": "https://nyaa.si/?page=rss&q=-batch+-bd&c=1_2&f=0&u=Ember_Encodes",
       "include_regex": "S\\d+E\\d",
       "exclude_regex": ""
     },
@@ -69,9 +69,18 @@
       "name": "Ironclad",
       "xml_file_name": "nyaa.xml",
       "link": "https://nyaa.land/",
-      "api_link": "https://nyaa.si/?page=rss&q=week+-batch+-bd&c=0_0&f=0&u=Ironclad",
+      "api_link": "https://nyaa.si/?page=rss&q=week+-batch+-bd&c=1_2&f=0&u=Ironclad",
       "include_regex": "",
       "exclude_regex": ""
+    },
+    {
+      "number": 9,
+      "name": "New-Raws",
+      "xml_file_name": "nyaa.xml",
+      "link": "https://nyaa.land/",
+      "api_link": "https://nyaa.si/?page=rss&q=%22%5BNew-raws%5D%22&c=1_2&f=0",
+      "include_regex": "",
+      "exclude_regex": "\\d+\\s*~\\s*\\d+"
     }
   ]
 }
