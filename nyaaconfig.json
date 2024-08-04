@@ -14,7 +14,7 @@
       "number": 2,
       "name": "Judas",
       "xml_file_name": "nyaa.xml",
-      "link": "https://nyaa.si/",
+      "link": "https://nyaa.land/",
       "api_link": "https://nyaa.si/?page=rss&q=1080p+-Batch&c=0_0&f=0&u=Judas",
       "include_regex": "S\\d+E\\d+",
       "exclude_regex": ""
@@ -23,7 +23,7 @@
       "number": 4,
       "name": "Nandesuka",
       "xml_file_name": "Nandesuka2.xml",
-      "link": "https://nyaa.si/user/Nandesuka",
+      "link": "https://nyaa.land/",
       "api_link": "https://feed.animetosho.org/json?q=2160p+Nandesuka+b+global+-%22h.264%22&page=",
       "include_regex": "S\\d+E\\d+",
       "exclude_regex": ""
@@ -32,7 +32,7 @@
       "number": 5,
       "name": "Erai-HEVC",
       "xml_file_name": "Erai-rawshevc.xml",
-      "link": "https://nyaa.si/user/Erai-raws",
+      "link": "https://nyaa.land/",
       "api_link": "https://feed.animetosho.org/json?q=%22%5BErai-raws%5D%22%201080p%20HEVC%20-batch&page=",
       "include_regex": "",
       "exclude_regex": ""
