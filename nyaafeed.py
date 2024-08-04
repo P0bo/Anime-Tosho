@@ -3,20 +3,27 @@ import os
 import re
 import sys
 import requests
+import time
 from datetime import datetime
 
 def load_config():
     with open('nyaaconfig.json', 'r') as f:
         return json.load(f)
 
-def fetch_data(api_link):
-    try:
-        response = requests.get(api_link, timeout=10)
-        response.raise_for_status()
-        return response.text
-    except requests.exceptions.RequestException as e:
-        print(f"Failed to fetch data from {api_link}, error: {e}")
-        return None
+def fetch_data(api_link, retries=2, delay=3):
+    """Fetch data from the API link with retries."""
+    for attempt in range(retries + 1):  # Add 1 to include the initial attempt
+        try:
+            response = requests.get(api_link, timeout=10)
+            response.raise_for_status()
+            return response.text
+        except requests.exceptions.RequestException as e:
+            print(f"Failed to fetch data from {api_link}, attempt {attempt + 1}/{retries + 1}, error: {e}")
+            if attempt < retries:
+                print(f"Retrying in {delay} seconds...")
+                time.sleep(delay)
+    print(f"Skipping {api_link} after {retries + 1} failed attempts.")
+    return None
 
 def extract_text(pattern, text):
     match = re.search(pattern, text)
@@ -207,6 +214,7 @@ def main():
 
     for feed in feeds:
         update_feed(feed)
+        time.sleep(3)  # Add a 3-second delay between processing each feed
 
     print("All feeds updated successfully.")
 
