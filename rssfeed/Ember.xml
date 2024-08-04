@@ -1,280 +1,215 @@
-<?xml version="1.0" encoding="UTF-8"?>
+import json
+import os
+import re
+import sys
+import requests
+from datetime import datetime
+
+def load_config():
+    with open('config.json', 'r') as f:
+        return json.load(f)
+
+def fetch_data(api_link):
+    try:
+        response = requests.get(api_link, timeout=10)
+        response.raise_for_status()
+        return response.text
+    except requests.exceptions.RequestException as e:
+        print(f"Failed to fetch data from {api_link}, error: {e}")
+        return None
+
+def extract_text(pattern, text):
+    match = re.search(pattern, text)
+    return match.group(1) if match else None
+
+def process_item(item_text):
+    # Define patterns to extract elements
+    patterns = {
+        'title': r'<title>(.*?)</title>',
+        'link': r'<link>(.*?)</link>',
+        'guid': r'<guid[^>]*>(.*?)</guid>',
+        'pubDate': r'<pubDate>(.*?)</pubDate>',
+        'seeders': r'<(?:ns0:|nyaa:)?seeders>(.*?)</(?:ns0:|nyaa:)?seeders>',
+        'leechers': r'<(?:ns0:|nyaa:)?leechers>(.*?)</(?:ns0:|nyaa:)?leechers>',
+        'downloads': r'<(?:ns0:|nyaa:)?downloads>(.*?)</(?:ns0:|nyaa:)?downloads>',
+        'size': r'<(?:ns0:|nyaa:)?size>(.*?)</(?:ns0:|nyaa:)?size>',
+        'description': r'<description>(.*?)</description>',
+        'trusted': r'<(?:ns0:|nyaa:)?trusted>(.*?)</(?:ns0:|nyaa:)?trusted>',
+        'remake': r'<(?:ns0:|nyaa:)?remake>(.*?)</(?:ns0:|nyaa:)?remake>'
+    }
+    
+    item_data = {}
+    for key, pattern in patterns.items():
+        item_data[key] = extract_text(pattern, item_text)
+
+    return item_data
+
+def parse_xml(xml_content):
+    items = re.findall(r'<item.*?>(.*?)</item>', xml_content, re.DOTALL)
+    entries = []
+    
+    for item_text in items:
+        item_data = process_item(item_text)
+        if item_data['title'] and item_data['link'] and item_data['guid'] and item_data['pubDate'] and item_data['size'] and item_data['seeders'] and item_data['leechers'] and item_data['downloads']:
+            entries.append(item_data)
+        else:
+            print(f"Skipping item due to missing elements: {item_text[:100]}...")  # Print a snippet for debugging
+    
+    return entries
+
+def filter_entries(entries, include_regex, exclude_regex):
+    filtered_entries = []
+    include_pattern = re.compile(include_regex, re.IGNORECASE) if include_regex else None
+    exclude_pattern = re.compile(exclude_regex, re.IGNORECASE) if exclude_regex else None
+
+    for entry in entries:
+        title = entry.get("title", "")
+
+        if include_pattern and not include_pattern.search(title):
+            continue
+        if exclude_pattern and exclude_pattern.search(title):
+            continue
+
+        filtered_entries.append(entry)
+
+    return filtered_entries
+
+def load_existing_xml(xml_file_name):
+    file_path = os.path.join('rssfeed', xml_file_name)
+    if os.path.exists(file_path):
+        with open(file_path, 'r', encoding='utf-8') as f:
+            return f.read()
+    return None
+
+def extract_existing_ids(existing_xml):
+    if not existing_xml:
+        return set()
+
+    id_pattern = re.compile(r'<guid isPermaLink="true">https://nyaa\.si/view/(\d+)</guid>')
+    return set(id_pattern.findall(existing_xml))
+
+def create_xml_entries(feed_name, feed_link, entries, existing_ids):
+    new_entries = []
+
+    for entry in entries:
+        entry_id = str(entry['guid'].split('/')[-1])
+        if entry_id in existing_ids:
+            continue
+
+        title = entry['title']
+        torrent_url = entry['link']
+        pub_date = entry['pubDate']
+
+        size_str = entry['size']
+        size_value, size_unit = re.match(r'([0-9.]+)\s*(MiB|GiB)', size_str).groups()
+        size_mb = float(size_value) * (1024 if size_unit == 'GiB' else 1)  # Convert GiB to MiB
+
+        seeders = entry.get('seeders', 0)
+        leechers = entry.get('leechers', 0)
+        downloads = entry.get('downloads', 0)
+        trusted = entry.get('trusted', 'No')
+        remake = entry.get('remake', 'No')
+
+        hyperlink = f'<a href="{entry["guid"]}">{title}</a>'
+        nyaa_id = entry_id
+        description_content = (
+            f"{size_mb:.2f} MiB | Seeders: {seeders} | Leechers: {leechers} | "
+            f"Downloads: {downloads} | Nyaa: {nyaa_id} | Trusted: {trusted} | Remake: {remake} | {hyperlink}"
+        )
+
+        new_entry = f"""
+<item>
+  <guid isPermaLink="true">{entry['guid']}</guid>
+  <title><![CDATA[{title}]]></title>
+  <link>{torrent_url}</link>
+  <pubDate>{pub_date}</pubDate>
+  <description><![CDATA[{description_content}]]></description>
+</item>"""
+        new_entries.append(new_entry.strip())
+
+    return new_entries
+
+def merge_xml_data(existing_xml, new_entries, feed_name, feed_link):
+    if existing_xml is None:
+        existing_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
 <channel>
-  <title>Ember</title>
-  <link>https://nyaa.si/user/Ember_Encodes</link>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854901</guid>
-  <title><![CDATA[[LostYears] The Dangers in My Heart - S02E07 (BD 1080p x265 AAC Opus) (Japanese, English Dubs) [Dual-Audio] | Boku no Kokoro no Yabai Yatsu S2 - 07 (Vol. 5) | 僕の心のヤバイやつ【karte19】]]></title>
-  <link>https://nyaa.si/download/1854901.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 22:14:28 -0000</pubDate>
-  <description><![CDATA[1331.20 MiB | Seeders: 148 | Leechers: 10 | Downloads: 389 | Nyaa: 1854901 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854901">[LostYears] The Dangers in My Heart - S02E07 (BD 1080p x265 AAC Opus) (Japanese, English Dubs) [Dual-Audio] | Boku no Kokoro no Yabai Yatsu S2 - 07 (Vol. 5) | 僕の心のヤバイやつ【karte19】</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854895</guid>
-  <title><![CDATA[[Yameii] Why Does Nobody Remember Me in This World - S01E02 [English Dub] [CR WEB-DL 1080p] [C32D59D3] (Naze Boku no Sekai o Dare mo Oboeteinai no ka?)]]></title>
-  <link>https://nyaa.si/download/1854895.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 21:08:38 -0000</pubDate>
-  <description><![CDATA[1331.20 MiB | Seeders: 92 | Leechers: 10 | Downloads: 249 | Nyaa: 1854895 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854895">[Yameii] Why Does Nobody Remember Me in This World - S01E02 [English Dub] [CR WEB-DL 1080p] [C32D59D3] (Naze Boku no Sekai o Dare mo Oboeteinai no ka?)</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854893</guid>
-  <title><![CDATA[[ToonsHub] Why Does Nobody Remember Me in This World S01E02 1080p CR WEB-DL AAC2.0 H.264 (Naze Boku no Sekai wo Daremo Oboeteinai no ka?, Dual-Audio, Multi-Subs)]]></title>
-  <link>https://nyaa.si/download/1854893.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 21:03:21 -0000</pubDate>
-  <description><![CDATA[1433.60 MiB | Seeders: 51 | Leechers: 3 | Downloads: 141 | Nyaa: 1854893 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854893">[ToonsHub] Why Does Nobody Remember Me in This World S01E02 1080p CR WEB-DL AAC2.0 H.264 (Naze Boku no Sekai wo Daremo Oboeteinai no ka?, Dual-Audio, Multi-Subs)</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854892</guid>
-  <title><![CDATA[Why Does Nobody Remember Me in This World S01E02 Rinne 1080p CR WEB-DL AAC2.0 H 264 DUAL-VARYG (Naze Boku no Sekai wo Daremo Oboeteinai no ka?, Dual-Audio, Multi-Subs)]]></title>
-  <link>https://nyaa.si/download/1854892.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 21:02:32 -0000</pubDate>
-  <description><![CDATA[1433.60 MiB | Seeders: 79 | Leechers: 5 | Downloads: 236 | Nyaa: 1854892 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854892">Why Does Nobody Remember Me in This World S01E02 Rinne 1080p CR WEB-DL AAC2.0 H 264 DUAL-VARYG (Naze Boku no Sekai wo Daremo Oboeteinai no ka?, Dual-Audio, Multi-Subs)</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854887</guid>
-  <title><![CDATA[[Yameii] Makeine - Too Many Losing Heroines! - S01E02 [English Dub] [CR WEB-DL 1080p] [FD643CB4] (Make Heroine ga Oosugiru!)]]></title>
-  <link>https://nyaa.si/download/1854887.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 20:13:15 -0000</pubDate>
-  <description><![CDATA[1433.60 MiB | Seeders: 71 | Leechers: 7 | Downloads: 223 | Nyaa: 1854887 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854887">[Yameii] Makeine - Too Many Losing Heroines! - S01E02 [English Dub] [CR WEB-DL 1080p] [FD643CB4] (Make Heroine ga Oosugiru!)</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854882</guid>
-  <title><![CDATA[Makeine Too Many Losing Heroines S01E02 The Promised Failure for You 1080p CR WEB-DL AAC2.0 H 264 DUAL-VARYG (Make Heroine ga Oosugiru!, Dual-Audio, Multi-Subs)]]></title>
-  <link>https://nyaa.si/download/1854882.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 20:07:10 -0000</pubDate>
-  <description><![CDATA[1433.60 MiB | Seeders: 94 | Leechers: 3 | Downloads: 323 | Nyaa: 1854882 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854882">Makeine Too Many Losing Heroines S01E02 The Promised Failure for You 1080p CR WEB-DL AAC2.0 H 264 DUAL-VARYG (Make Heroine ga Oosugiru!, Dual-Audio, Multi-Subs)</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854880</guid>
-  <title><![CDATA[[ToonsHub] Makeine Too Many Losing Heroines! S01E02 1080p CR WEB-DL AAC2.0 H.264 (Make Heroine ga Oosugiru!, Dual-Audio, Multi-Subs)]]></title>
-  <link>https://nyaa.si/download/1854880.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 20:06:43 -0000</pubDate>
-  <description><![CDATA[1433.60 MiB | Seeders: 14 | Leechers: 3 | Downloads: 56 | Nyaa: 1854880 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854880">[ToonsHub] Makeine Too Many Losing Heroines! S01E02 1080p CR WEB-DL AAC2.0 H.264 (Make Heroine ga Oosugiru!, Dual-Audio, Multi-Subs)</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854879</guid>
-  <title><![CDATA[[ToonsHub] The Elusive Samurai S01E01 1080p CR WEB-DL AAC2.0 H.264 (Nige Jouzu no Wakagimi, Dual-Audio, Multi-Subs)]]></title>
-  <link>https://nyaa.si/download/1854879.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 20:00:04 -0000</pubDate>
-  <description><![CDATA[1433.60 MiB | Seeders: 19 | Leechers: 4 | Downloads: 54 | Nyaa: 1854879 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854879">[ToonsHub] The Elusive Samurai S01E01 1080p CR WEB-DL AAC2.0 H.264 (Nige Jouzu no Wakagimi, Dual-Audio, Multi-Subs)</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854877</guid>
-  <title><![CDATA[[DKB] Shoushimin Series - S01E04 [1080p][HEVC x265 10bit][Multi-Subs][weekly]]]></title>
-  <link>https://nyaa.si/download/1854877.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 19:51:34 -0000</pubDate>
-  <description><![CDATA[249.80 MiB | Seeders: 48 | Leechers: 4 | Downloads: 155 | Nyaa: 1854877 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854877">[DKB] Shoushimin Series - S01E04 [1080p][HEVC x265 10bit][Multi-Subs][weekly]</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854875</guid>
-  <title><![CDATA[[Yameii] The Elusive Samurai - S01E01 [English Dub] [CR WEB-DL 1080p] [E994FE87] (Nige Jouzu no Wakagimi)]]></title>
-  <link>https://nyaa.si/download/1854875.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 19:40:35 -0000</pubDate>
-  <description><![CDATA[1331.20 MiB | Seeders: 73 | Leechers: 11 | Downloads: 253 | Nyaa: 1854875 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854875">[Yameii] The Elusive Samurai - S01E01 [English Dub] [CR WEB-DL 1080p] [E994FE87] (Nige Jouzu no Wakagimi)</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854873</guid>
-  <title><![CDATA[The Elusive Samurai S01E01 May 22nd 1080p CR WEB-DL AAC2.0 H 264 DUAL-VARYG (Nige Jouzu no Wakagimi, Dual-Audio, Multi-Subs)]]></title>
-  <link>https://nyaa.si/download/1854873.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 19:36:19 -0000</pubDate>
-  <description><![CDATA[1433.60 MiB | Seeders: 114 | Leechers: 5 | Downloads: 371 | Nyaa: 1854873 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854873">The Elusive Samurai S01E01 May 22nd 1080p CR WEB-DL AAC2.0 H 264 DUAL-VARYG (Nige Jouzu no Wakagimi, Dual-Audio, Multi-Subs)</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854872</guid>
-  <title><![CDATA[[Yameii] My Hero Academia - S07E11 [English Dub] [CR WEB-DL 1080p] [09FE5BFB] (Boku no Hero Academia Season 7 | S7)]]></title>
-  <link>https://nyaa.si/download/1854872.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 19:15:05 -0000</pubDate>
-  <description><![CDATA[1433.60 MiB | Seeders: 242 | Leechers: 10 | Downloads: 773 | Nyaa: 1854872 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854872">[Yameii] My Hero Academia - S07E11 [English Dub] [CR WEB-DL 1080p] [09FE5BFB] (Boku no Hero Academia Season 7 | S7)</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854869</guid>
-  <title><![CDATA[My Hero Academia S07E11 Light Fades to Rain 1080p CR WEB-DL AAC2.0 H 264 DUAL-VARYG (Boku no Hero Academia, Dual-Audio, Multi-Subs)]]></title>
-  <link>https://nyaa.si/download/1854869.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 19:10:33 -0000</pubDate>
-  <description><![CDATA[1433.60 MiB | Seeders: 548 | Leechers: 19 | Downloads: 1383 | Nyaa: 1854869 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854869">My Hero Academia S07E11 Light Fades to Rain 1080p CR WEB-DL AAC2.0 H 264 DUAL-VARYG (Boku no Hero Academia, Dual-Audio, Multi-Subs)</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854863</guid>
-  <title><![CDATA[[Judas] ATRI -My Dear Moments- - S01E04 [1080p][HEVC x265 10bit][Multi-Subs] (Weekly)]]></title>
-  <link>https://nyaa.si/download/1854863.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 18:33:23 -0000</pubDate>
-  <description><![CDATA[194.00 MiB | Seeders: 48 | Leechers: 3 | Downloads: 226 | Nyaa: 1854863 | Trusted: No | Remake: Yes | <a href="https://nyaa.si/view/1854863">[Judas] ATRI -My Dear Moments- - S01E04 [1080p][HEVC x265 10bit][Multi-Subs] (Weekly)</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854861</guid>
-  <title><![CDATA[[DKB] Make Heroine ga Oosugiru! - S01E04 [1080p][HEVC x265 10bit][Multi-Subs][weekly]]]></title>
-  <link>https://nyaa.si/download/1854861.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 18:29:16 -0000</pubDate>
-  <description><![CDATA[410.60 MiB | Seeders: 90 | Leechers: 4 | Downloads: 280 | Nyaa: 1854861 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854861">[DKB] Make Heroine ga Oosugiru! - S01E04 [1080p][HEVC x265 10bit][Multi-Subs][weekly]</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854858</guid>
-  <title><![CDATA[[ToonsHub] Shoushimin Series S01E04 1080p AMZN WEB-DL DDP2.0 H.264 (SHOSHIMIN: How to Become Ordinary)]]></title>
-  <link>https://nyaa.si/download/1854858.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 18:16:21 -0000</pubDate>
-  <description><![CDATA[377.60 MiB | Seeders: 12 | Leechers: 0 | Downloads: 45 | Nyaa: 1854858 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854858">[ToonsHub] Shoushimin Series S01E04 1080p AMZN WEB-DL DDP2.0 H.264 (SHOSHIMIN: How to Become Ordinary)</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854853</guid>
-  <title><![CDATA[SHOSHIMIN How to become Ordinary S01E04 Mind of a Lone Wolf 1080p CR WEB-DL AAC2.0 H 264-VARYG (Shoushimin Series, Multi-Subs)]]></title>
-  <link>https://nyaa.si/download/1854853.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 18:04:07 -0000</pubDate>
-  <description><![CDATA[1331.20 MiB | Seeders: 88 | Leechers: 8 | Downloads: 288 | Nyaa: 1854853 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854853">SHOSHIMIN How to become Ordinary S01E04 Mind of a Lone Wolf 1080p CR WEB-DL AAC2.0 H 264-VARYG (Shoushimin Series, Multi-Subs)</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854851</guid>
-  <title><![CDATA[[ToonsHub] SHOSHIMIN How to become Ordinary S01E04 1080p CR WEB-DL AAC2.0 H.264 (Shoushimin Series, Multi-Subs)]]></title>
-  <link>https://nyaa.si/download/1854851.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 18:02:58 -0000</pubDate>
-  <description><![CDATA[1331.20 MiB | Seeders: 9 | Leechers: 2 | Downloads: 44 | Nyaa: 1854851 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854851">[ToonsHub] SHOSHIMIN How to become Ordinary S01E04 1080p CR WEB-DL AAC2.0 H.264 (Shoushimin Series, Multi-Subs)</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854845</guid>
-  <title><![CDATA[SHOSHIMIN How to Become Ordinary S01E04 VOSTFR 1080p WEB x264 AAC -Tsundere-Raws (CR) (Shoushimin Series)]]></title>
-  <link>https://nyaa.si/download/1854845.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 18:02:00 -0000</pubDate>
-  <description><![CDATA[1331.20 MiB | Seeders: 92 | Leechers: 2 | Downloads: 320 | Nyaa: 1854845 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854845">SHOSHIMIN How to Become Ordinary S01E04 VOSTFR 1080p WEB x264 AAC -Tsundere-Raws (CR) (Shoushimin Series)</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854835</guid>
-  <title><![CDATA[[DKB] Atri: My Dear Moments - S01E04 [1080p][HEVC x265 10bit][Multi-Subs][weekly]]]></title>
-  <link>https://nyaa.si/download/1854835.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 17:44:36 -0000</pubDate>
-  <description><![CDATA[270.20 MiB | Seeders: 49 | Leechers: 1 | Downloads: 159 | Nyaa: 1854835 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854835">[DKB] Atri: My Dear Moments - S01E04 [1080p][HEVC x265 10bit][Multi-Subs][weekly]</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854826</guid>
-  <title><![CDATA[[Judas] Naze Boku no Sekai wo Daremo Oboeteinai no ka? (Why Does Nobody Remember Me in This World?) - S01E04 [1080p][HEVC x265 10bit][Multi-Subs] (Weekly)]]></title>
-  <link>https://nyaa.si/download/1854826.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 17:16:52 -0000</pubDate>
-  <description><![CDATA[324.20 MiB | Seeders: 121 | Leechers: 6 | Downloads: 482 | Nyaa: 1854826 | Trusted: No | Remake: Yes | <a href="https://nyaa.si/view/1854826">[Judas] Naze Boku no Sekai wo Daremo Oboeteinai no ka? (Why Does Nobody Remember Me in This World?) - S01E04 [1080p][HEVC x265 10bit][Multi-Subs] (Weekly)</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854825</guid>
-  <title><![CDATA[[DKB] Nige Jouzu no Wakagimi - S01E05 [1080p][HEVC x265 10bit][Multi-Subs][weekly]]]></title>
-  <link>https://nyaa.si/download/1854825.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 17:16:45 -0000</pubDate>
-  <description><![CDATA[751.00 MiB | Seeders: 90 | Leechers: 1 | Downloads: 301 | Nyaa: 1854825 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854825">[DKB] Nige Jouzu no Wakagimi - S01E05 [1080p][HEVC x265 10bit][Multi-Subs][weekly]</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854815</guid>
-  <title><![CDATA[[ToonsHub] Shoshimin How to Become Ordinary S01E04 1080p ABEMA WEB-DL AAC2.0 H.264 (Shoushimin Series)]]></title>
-  <link>https://nyaa.si/download/1854815.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 17:13:06 -0000</pubDate>
-  <description><![CDATA[692.80 MiB | Seeders: 114 | Leechers: 3 | Downloads: 355 | Nyaa: 1854815 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854815">[ToonsHub] Shoshimin How to Become Ordinary S01E04 1080p ABEMA WEB-DL AAC2.0 H.264 (Shoushimin Series)</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854813</guid>
-  <title><![CDATA[[ToonsHub] Makeine Too Many Losing Heroines! S01E04 1080p CR WEB-DL AAC2.0 H.264 (Make Heroine ga Oosugiru!, Multi-Subs)]]></title>
-  <link>https://nyaa.si/download/1854813.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 17:04:04 -0000</pubDate>
-  <description><![CDATA[1433.60 MiB | Seeders: 15 | Leechers: 1 | Downloads: 58 | Nyaa: 1854813 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854813">[ToonsHub] Makeine Too Many Losing Heroines! S01E04 1080p CR WEB-DL AAC2.0 H.264 (Make Heroine ga Oosugiru!, Multi-Subs)</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854811</guid>
-  <title><![CDATA[[ToonsHub] Makeine Too Many Losing Heroines! S01E04 1080p B-Global WEB-DL AAC2.0 H.265 (Make Heroine ga Oosugiru!, Multi-Subs)]]></title>
-  <link>https://nyaa.si/download/1854811.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 17:03:02 -0000</pubDate>
-  <description><![CDATA[274.90 MiB | Seeders: 17 | Leechers: 2 | Downloads: 83 | Nyaa: 1854811 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854811">[ToonsHub] Makeine Too Many Losing Heroines! S01E04 1080p B-Global WEB-DL AAC2.0 H.265 (Make Heroine ga Oosugiru!, Multi-Subs)</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854810</guid>
-  <title><![CDATA[Makeine Too Many Losing Heroines S01E04 When You Stare into a Losing Heroine the Losing Heroine Stares Back into You 1080p CR WEB-DL AAC2.0 H 264-VARYG (Make Heroine ga Oosugiru!, Multi-Subs)]]></title>
-  <link>https://nyaa.si/download/1854810.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 17:02:54 -0000</pubDate>
-  <description><![CDATA[1433.60 MiB | Seeders: 106 | Leechers: 6 | Downloads: 322 | Nyaa: 1854810 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854810">Makeine Too Many Losing Heroines S01E04 When You Stare into a Losing Heroine the Losing Heroine Stares Back into You 1080p CR WEB-DL AAC2.0 H 264-VARYG (Make Heroine ga Oosugiru!, Multi-Subs)</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854809</guid>
-  <title><![CDATA[[ToonsHub] Makeine Too Many Losing Heroines! S01E04 1080p B-Global WEB-DL AAC2.0 H.264 (Make Heroine ga Oosugiru!, Multi-Subs)]]></title>
-  <link>https://nyaa.si/download/1854809.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 17:02:54 -0000</pubDate>
-  <description><![CDATA[275.10 MiB | Seeders: 8 | Leechers: 1 | Downloads: 32 | Nyaa: 1854809 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854809">[ToonsHub] Makeine Too Many Losing Heroines! S01E04 1080p B-Global WEB-DL AAC2.0 H.264 (Make Heroine ga Oosugiru!, Multi-Subs)</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854806</guid>
-  <title><![CDATA[Makeine Too Many Losing Heroines S01E04 VOSTFR 1080p WEB x264 AAC -Tsundere-Raws (CR) (Make Heroine ga Oosugiru)]]></title>
-  <link>https://nyaa.si/download/1854806.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 17:02:35 -0000</pubDate>
-  <description><![CDATA[1433.60 MiB | Seeders: 105 | Leechers: 2 | Downloads: 421 | Nyaa: 1854806 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854806">Makeine Too Many Losing Heroines S01E04 VOSTFR 1080p WEB x264 AAC -Tsundere-Raws (CR) (Make Heroine ga Oosugiru)</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854803</guid>
-  <title><![CDATA[[ToonsHub] The Dangers in My Heart S02E07 1080p HIDIVE WEB-DL AAC2.0 H.264 (Boku no Kokoro no Yabai Yatsu, Dual-Audio, Multi-Subs)]]></title>
-  <link>https://nyaa.si/download/1854803.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 17:01:57 -0000</pubDate>
-  <description><![CDATA[896.00 MiB | Seeders: 22 | Leechers: 2 | Downloads: 71 | Nyaa: 1854803 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854803">[ToonsHub] The Dangers in My Heart S02E07 1080p HIDIVE WEB-DL AAC2.0 H.264 (Boku no Kokoro no Yabai Yatsu, Dual-Audio, Multi-Subs)</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854800</guid>
-  <title><![CDATA[Makeine.Too.Many.Losing.Heroines.S01E04.1080p.B-Global.WEB-DL.AAC2.0.H.264-NanDesuKa.mkv]]></title>
-  <link>https://nyaa.si/download/1854800.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 17:01:38 -0000</pubDate>
-  <description><![CDATA[274.90 MiB | Seeders: 6 | Leechers: 2 | Downloads: 41 | Nyaa: 1854800 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854800">Makeine.Too.Many.Losing.Heroines.S01E04.1080p.B-Global.WEB-DL.AAC2.0.H.264-NanDesuKa.mkv</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854798</guid>
-  <title><![CDATA[Makeine.Too.Many.Losing.Heroines.S01E04.1080p.B-Global.WEB-DL.AAC2.0.H.265-NanDesuKa.mkv]]></title>
-  <link>https://nyaa.si/download/1854798.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 17:01:33 -0000</pubDate>
-  <description><![CDATA[275.00 MiB | Seeders: 81 | Leechers: 2 | Downloads: 283 | Nyaa: 1854798 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854798">Makeine.Too.Many.Losing.Heroines.S01E04.1080p.B-Global.WEB-DL.AAC2.0.H.265-NanDesuKa.mkv</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854794</guid>
-  <title><![CDATA[The Dangers in My Heart S02E07 Karte 19 Were Overflowing 1080p HIDI WEB-DL AAC2.0 H 264 DUAL-VARYG (Boku no Kokoro no Yabai Yatsu, Dual-Audio, Multi-Subs)]]></title>
-  <link>https://nyaa.si/download/1854794.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 17:00:56 -0000</pubDate>
-  <description><![CDATA[896.40 MiB | Seeders: 103 | Leechers: 1 | Downloads: 324 | Nyaa: 1854794 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854794">The Dangers in My Heart S02E07 Karte 19 Were Overflowing 1080p HIDI WEB-DL AAC2.0 H 264 DUAL-VARYG (Boku no Kokoro no Yabai Yatsu, Dual-Audio, Multi-Subs)</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854792</guid>
-  <title><![CDATA[The.Dangers.in.My.Heart.S02E07.1080p.HIDI.WEB-DL.DUAL.AAC2.0.H.264-NanDesuKa.mkv]]></title>
-  <link>https://nyaa.si/download/1854792.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 17:00:50 -0000</pubDate>
-  <description><![CDATA[897.30 MiB | Seeders: 19 | Leechers: 2 | Downloads: 68 | Nyaa: 1854792 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854792">The.Dangers.in.My.Heart.S02E07.1080p.HIDI.WEB-DL.DUAL.AAC2.0.H.264-NanDesuKa.mkv</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854787</guid>
-  <title><![CDATA[Suicide.Squad.Isekai.S01E08.1080p.MAX.WEB-DL.MULTi.DDP2.0.H.264-NanDesuKa.mkv]]></title>
-  <link>https://nyaa.si/download/1854787.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 16:54:53 -0000</pubDate>
-  <description><![CDATA[472.80 MiB | Seeders: 35 | Leechers: 3 | Downloads: 130 | Nyaa: 1854787 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854787">Suicide.Squad.Isekai.S01E08.1080p.MAX.WEB-DL.MULTi.DDP2.0.H.264-NanDesuKa.mkv</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854786</guid>
-  <title><![CDATA[[RaiN] Oshi no Ko - S02E05 (WEB 1080p HEVC E-AC3)]]></title>
-  <link>https://nyaa.si/download/1854786.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 16:52:08 -0000</pubDate>
-  <description><![CDATA[2048.00 MiB | Seeders: 32 | Leechers: 8 | Downloads: 132 | Nyaa: 1854786 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854786">[RaiN] Oshi no Ko - S02E05 (WEB 1080p HEVC E-AC3)</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854785</guid>
-  <title><![CDATA[[DKB] Naze Boku no Sekai wo Daremo Oboeteinai no ka - S01E04 [1080p][HEVC x265 10bit][Multi-Subs][weekly]]]></title>
-  <link>https://nyaa.si/download/1854785.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 16:51:21 -0000</pubDate>
-  <description><![CDATA[428.30 MiB | Seeders: 63 | Leechers: 1 | Downloads: 197 | Nyaa: 1854785 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854785">[DKB] Naze Boku no Sekai wo Daremo Oboeteinai no ka - S01E04 [1080p][HEVC x265 10bit][Multi-Subs][weekly]</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854783</guid>
-  <title><![CDATA[[ToonsHub] The Fable S01E18 1080p HS WEB-DL AAC2.0 H.264 (English-Sub)]]></title>
-  <link>https://nyaa.si/download/1854783.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 16:47:04 -0000</pubDate>
-  <description><![CDATA[559.60 MiB | Seeders: 42 | Leechers: 2 | Downloads: 213 | Nyaa: 1854783 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854783">[ToonsHub] The Fable S01E18 1080p HS WEB-DL AAC2.0 H.264 (English-Sub)</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854780</guid>
-  <title><![CDATA[The Fable S01E18 Cheerio 1080p DSNP WEB-DL AAC2.0 H 264-VARYG (Multi-Subs)]]></title>
-  <link>https://nyaa.si/download/1854780.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 16:44:11 -0000</pubDate>
-  <description><![CDATA[680.70 MiB | Seeders: 463 | Leechers: 13 | Downloads: 1828 | Nyaa: 1854780 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854780">The Fable S01E18 Cheerio 1080p DSNP WEB-DL AAC2.0 H 264-VARYG (Multi-Subs)</a>]]></description>
-</item>
-<item>
-  <guid isPermaLink="true">https://nyaa.si/view/1854779</guid>
-  <title><![CDATA[The.Fable.S01E18.1080p.DSNP.WEB-DL.AAC2.0.H.264-NanDesuKa.mkv]]></title>
-  <link>https://nyaa.si/download/1854779.torrent</link>
-  <pubDate>Sat, 03 Aug 2024 16:43:39 -0000</pubDate>
-  <description><![CDATA[680.70 MiB | Seeders: 60 | Leechers: 4 | Downloads: 339 | Nyaa: 1854779 | Trusted: No | Remake: No | <a href="https://nyaa.si/view/1854779">The.Fable.S01E18.1080p.DSNP.WEB-DL.AAC2.0.H.264-NanDesuKa.mkv</a>]]></description>
-</item>
+  <title>{feed_name}</title>
+  <link>{feed_link}</link>
 </channel>
-</rss>
+</rss>"""
+    
+    channel_start = existing_xml.find("<channel>")
+    channel_end = existing_xml.find("</channel>")
+
+    if channel_start == -1 or channel_end == -1:
+        raise ValueError("Invalid XML structure: Missing <channel> tags.")
+
+    merged_xml = (
+        existing_xml[:channel_end] +
+        "\n".join(new_entries) +
+        "\n" +
+        existing_xml[channel_end:]
+    )
+
+    return merged_xml.strip()
+
+def main():
+    if len(sys.argv) != 2:
+        print("Usage: python script.py feed_number")
+        sys.exit(1)
+
+    feed_number = int(sys.argv[1])
+
+    config = load_config()
+    feeds = config['feeds']
+
+    selected_feed = None
+    for feed in feeds:
+        if feed['number'] == feed_number:
+            selected_feed = feed
+            break
+
+    if not selected_feed:
+        print(f"Feed number {feed_number} not found.")
+        sys.exit(1)
+
+    existing_xml = load_existing_xml(selected_feed['xml_file_name'])
+    existing_ids = extract_existing_ids(existing_xml)
+
+    all_new_entries = []
+
+    print("Processing feed...")
+
+    xml_data = fetch_data(selected_feed['api_link'])
+    if xml_data:
+        entries = parse_xml(xml_data)
+
+        filtered_entries = filter_entries(
+            entries, 
+            selected_feed['include_regex'], 
+            selected_feed['exclude_regex']
+        )
+
+        new_entries = create_xml_entries(selected_feed['name'], selected_feed['link'], filtered_entries, existing_ids)
+
+        existing_ids.update(entry['guid'].split('/')[-1] for entry in filtered_entries)
+
+        all_new_entries.extend(new_entries)
+
+        print(f"Processed {len(new_entries)} new entries.")
+
+    if all_new_entries:
+        merged_xml = merge_xml_data(existing_xml, all_new_entries, selected_feed['name'], selected_feed['link'])
+
+        file_path = os.path.join('rssfeed', selected_feed['xml_file_name'])
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(merged_xml)
+
+        print(f"Total new entries merged: {len(all_new_entries)}")
+    else:
+        print("No new entries to merge. The XML file was not modified.")
+
+if __name__ == "__main__":
+    main()
