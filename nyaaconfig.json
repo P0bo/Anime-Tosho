@@ -51,7 +51,7 @@
       "name": "DKB",
       "xml_file_name": "nyaa.xml",
       "link": "https://nyaa.land/",
-      "api_link": "https://nyaa.si/?page=rss&q=weekly&c=0_0&f=0&u=DKB0512",
+      "api_link": "https://nyaa.si/?page=rss&q=week&c=0_0&f=0&u=DKB0512",
       "include_regex": "",
       "exclude_regex": ""
     },
@@ -62,6 +62,15 @@
       "link": "https://nyaa.land/",
       "api_link": "https://nyaa.si/?page=rss&q=-batch+-bd&c=0_0&f=0&u=Ember_Encodes",
       "include_regex": "S\\d+E\\d",
+      "exclude_regex": ""
+    },
+    {
+      "number": 8,
+      "name": "Ironclad",
+      "xml_file_name": "nyaa.xml",
+      "link": "https://nyaa.land/",
+      "api_link": "https://nyaa.si/?page=rss&q=week+-batch+-bd&c=0_0&f=0&u=Ironclad",
+      "include_regex": "",
       "exclude_regex": ""
     }
   ]
