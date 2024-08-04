@@ -21,7 +21,7 @@ jobs:
         pip install requests pytz
 
     - name: Delay for 15 minutes
-      run: sleep 900  # 900 seconds is 15 minutes
+      run: sleep 300  # 300 seconds is 5 minutes
 
     - name: Pull latest changes
       run: |
