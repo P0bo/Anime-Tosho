@@ -20,18 +20,18 @@
       "exclude_regex": ""
     },
     {
-      "number": 4,
-      "name": "Nandesuka",
-      "xml_file_name": "Nandesuka2.xml",
+      "number": 3,
+      "name": "AkihitoSubsWeeklies",
+      "xml_file_name": "nyaa.xml",
       "link": "https://nyaa.land/",
-      "api_link": "https://feed.animetosho.org/json?q=2160p+Nandesuka+b+global+-%22h.264%22&page=",
-      "include_regex": "S\\d+E\\d+",
+      "api_link": "https://nyaa.si/?page=rss&q=1080p+-batch&c=0_0&f=0&u=AkihitoSubsWeeklies",
+      "include_regex": "\\s-\\s\\d+",
       "exclude_regex": ""
     },
     {
-      "number": 5,
+      "number": 4,
       "name": "Erai-HEVC",
-      "xml_file_name": "Erai-rawshevc.xml",
+      "xml_file_name": "nyaa.xml",
       "link": "https://nyaa.land/",
       "api_link": "https://feed.animetosho.org/json?q=%22%5BErai-raws%5D%22%201080p%20HEVC%20-batch&page=",
       "include_regex": "",
