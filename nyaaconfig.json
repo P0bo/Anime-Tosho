@@ -30,10 +30,10 @@
     },
     {
       "number": 4,
-      "name": "Erai-HEVC",
+      "name": "NanDesuKa",
       "xml_file_name": "nyaa.xml",
       "link": "https://nyaa.land/",
-      "api_link": "https://feed.animetosho.org/json?q=%22%5BErai-raws%5D%22%201080p%20HEVC%20-batch&page=",
+      "api_link": "https://nyaa.si/?page=rss&q=1080p+b+global+-h.264&c=1_2&f=0&u=NanDesuKa",
       "include_regex": "",
       "exclude_regex": ""
     }    
