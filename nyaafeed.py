@@ -158,45 +158,26 @@ def merge_xml_data(existing_xml, new_entries, feed_name, feed_link):
 
     return merged_xml.strip()
 
-def main():
-    if len(sys.argv) != 2:
-        print("Usage: python script.py feed_number")
-        sys.exit(1)
-
-    feed_number = int(sys.argv[1])
-
-    config = load_config()
-    feeds = config['feeds']
-
-    selected_feed = None
-    for feed in feeds:
-        if feed['number'] == feed_number:
-            selected_feed = feed
-            break
-
-    if not selected_feed:
-        print(f"Feed number {feed_number} not found.")
-        sys.exit(1)
-
-    existing_xml = load_existing_xml(selected_feed['xml_file_name'])
+def update_feed(feed):
+    existing_xml = load_existing_xml(feed['xml_file_name'])
     existing_ids = extract_existing_ids(existing_xml)
 
     all_new_entries = []
 
-    print("Processing feed...")
+    print(f"Processing feed '{feed['name']}'...")
 
-    xml_data = fetch_data(selected_feed['api_link'])
+    xml_data = fetch_data(feed['api_link'])
     if xml_data:
         entries = parse_xml(xml_data)
 
         filtered_entries = filter_entries(
             entries, 
-            selected_feed['include_regex'], 
-            selected_feed['exclude_regex']
+            feed['include_regex'], 
+            feed['exclude_regex']
         )
 
-        domain = selected_feed['link'].rstrip('/')  # Ensure no trailing slash
-        new_entries = create_xml_entries(selected_feed['name'], selected_feed['link'], filtered_entries, existing_ids, domain)
+        domain = feed['link'].rstrip('/')  # Ensure no trailing slash
+        new_entries = create_xml_entries(feed['name'], feed['link'], filtered_entries, existing_ids, domain)
 
         existing_ids.update(entry['guid'].split('/')[-1] for entry in filtered_entries)
 
@@ -205,9 +186,9 @@ def main():
         print(f"Processed {len(new_entries)} new entries.")
 
     if all_new_entries:
-        merged_xml = merge_xml_data(existing_xml, all_new_entries, selected_feed['name'], selected_feed['link'])
+        merged_xml = merge_xml_data(existing_xml, all_new_entries, feed['name'], feed['link'])
 
-        file_path = os.path.join('rssfeed', selected_feed['xml_file_name'])
+        file_path = os.path.join('rssfeed', feed['xml_file_name'])
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         with open(file_path, 'w', encoding='utf-8') as f:
             f.write(merged_xml)
@@ -215,6 +196,19 @@ def main():
         print(f"Total new entries merged: {len(all_new_entries)}")
     else:
         print("No new entries to merge. The XML file was not modified.")
+
+def main():
+    config = load_config()
+    feeds = config['feeds']
+
+    if not feeds:
+        print("No feeds available in the configuration.")
+        sys.exit(1)
+
+    for feed in feeds:
+        update_feed(feed)
+
+    print("All feeds updated successfully.")
 
 if __name__ == "__main__":
     main()
