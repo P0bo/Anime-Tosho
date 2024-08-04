@@ -75,10 +75,19 @@
     },
     {
       "number": 9,
-      "name": "New-Raws",
+      "name": "[New]-Raws",
       "xml_file_name": "nyaa.xml",
       "link": "https://nyaa.land/",
       "api_link": "https://nyaa.si/?page=rss&q=%22%5BNew-raws%5D%22&c=1_2&f=0",
+      "include_regex": "",
+      "exclude_regex": "\\d+\\s*~\\s*\\d+"
+    },
+    {
+      "number": 10,
+      "name": "New-[Raws]",
+      "xml_file_name": "nyaa.xml",
+      "link": "https://nyaa.land/",
+      "api_link": "https://nyaa.si/?page=rss&q=%22%5BNew-raws%5D%22&c=1_4&f=0",
       "include_regex": "",
       "exclude_regex": "\\d+\\s*~\\s*\\d+"
     }
