@@ -2,7 +2,7 @@ name: Update Feed 1
 
 on:
   repository_dispatch:
-    types: [trigger-feed-1]
+    types: [trigger-airing-1]
 
 jobs:
   update-feed-1:
