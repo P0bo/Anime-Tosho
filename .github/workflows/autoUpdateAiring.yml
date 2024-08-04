@@ -2,6 +2,9 @@ name: Scheduled Update for Feed 0
 
 on:
 
+  repository_dispatch:
+    types: [trigger-airing]
+
 jobs:
   update-feed-0:
     runs-on: ubuntu-latest
@@ -33,11 +36,10 @@ jobs:
         git add rssfeed/*.xml
         git commit -m "Scheduled update for Feed 0" || echo "No changes to commit"
         git pull origin main --rebase
-        git push https://x-access-token:${{ secrets.GH_PAT }}@github.com/${{ github.repository }}.git
 
     - name: Trigger Feed 1 Update Workflow
       run: |
         curl -X POST -H "Accept: application/vnd.github.everest-preview+json" \
         -H "Authorization: token ${{ secrets.GH_PAT }}" \
         https://api.github.com/repos/${{ github.repository }}/dispatches \
-        -d '{"event_type":"trigger-nyaa"}'
+        -d '{"event_type":"trigger-airing-1"}'        git push https://x-access-token:${{ secrets.GH_PAT }}@github.com/${{ github.repository }}.git
