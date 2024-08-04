@@ -6,7 +6,7 @@ import requests
 from datetime import datetime
 
 def load_config():
-    with open('config.json', 'r') as f:
+    with open('nyaaconfig.json', 'r') as f:
         return json.load(f)
 
 def fetch_data(api_link):
