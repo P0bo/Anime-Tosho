@@ -34,9 +34,18 @@
       "xml_file_name": "nyaa.xml",
       "link": "https://nyaa.land/",
       "api_link": "https://nyaa.si/?page=rss&q=1080p+b+global+-h.264&c=1_2&f=0&u=NanDesuKa",
-      "include_regex": "",
+      "include_regex": "(?i)(1080p.*(h\\.265|x265|hevc|av1)|(h\\.265|x265|hevc|av1).*1080p)",
       "exclude_regex": ""
-    }    
+    },
+    {
+      "number": 5,
+      "name": "Erai-HEVC",
+      "xml_file_name": "nyaa.xml",
+      "link": "https://nyaa.land/",
+      "api_link": "https://nyaa.si/?page=rss&q=1080p+hevc+-batch+-bd&c=1_2&f=0&u=Erai-raws",
+      "include_regex": "",
+      "exclude_regex": "\\d+\\s~\\s\\d+"
+    }
   ]
 }
 
