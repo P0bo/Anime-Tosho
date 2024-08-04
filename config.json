@@ -78,13 +78,12 @@
     },
     {
       "number": 2,
-      "name": "Ember",
-      "xml_file_name": "Ember.xml",
-      "link": "https://nyaa.si/user/Ember_Encodes",
-      "api_link": "https://feed.animetosho.org/json?q=%22%5BEmber%5D%22+-batch+-bd&page=",
-      "include_regex": "",
-      "exclude_regex": "",
-      "single_file": 1
+      "name": "Nyaa",
+      "xml_file_name": "nyaa.xml",
+      "link": "https://nyaa.land/",
+      "api_link": "https://nyaa.si/?page=rss&q=1080p+b+global&c=1_2&f=0&u=NanDesuKa",
+      "include_regex": "(?i)(1080p.*(h\\.265|x265|hevc|av1)|(h\\.265|x265|hevc|av1).*1080p)",
+      "exclude_regex": ""
     },
     {
       "number": 3,
