@@ -2,11 +2,6 @@ name: Manual Update Nyaa
 
 on:
   workflow_dispatch:
-    inputs:
-      feed_number:
-        description: 'Number of the feed to update'
-        required: true
-        type: number
 
 jobs:
   update-rss:
@@ -24,13 +19,8 @@ jobs:
       run: |
         pip install requests pytz
 
-    - name: Set Feed Number
-      id: set-feed-details
-      run: |
-        echo "FEED_NUMBER=${{ github.event.inputs.feed_number }}" >> $GITHUB_ENV
-
     - name: Run update script
-      run: python nyaafeed.py ${{ env.FEED_NUMBER }}
+      run: python nyaafeed.py
 
     - name: Commit and push changes
       env:
