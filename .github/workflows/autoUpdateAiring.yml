@@ -1,8 +1,6 @@
 name: Scheduled Update for Feed 0
 
 on:
-  schedule:
-    - cron: '*/30 * * * *'
 
 jobs:
   update-feed-0:
@@ -19,6 +17,9 @@ jobs:
     - name: Install dependencies
       run: |
         pip install requests pytz
+
+      - name: Delay for 5 minutes
+        run: sleep 300  # 300 seconds is 5 minutes
 
     - name: Run update script for Feed 0
       run: python toshofeed.py 0 1 1
