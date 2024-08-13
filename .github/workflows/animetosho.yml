@@ -10,6 +10,7 @@ on:
         options:
           - Airing
           - Airing2
+          - Feed1
       start_page:
         description: 'Starting page number'
         required: true
@@ -45,6 +46,8 @@ jobs:
           echo "FEED_NUMBER=0" >> $GITHUB_ENV
           elif [ "${{ github.event.inputs.feed_name }}" == "Airing2" ]; then
           echo "FEED_NUMBER=1" >> $GITHUB_ENV
+          elif [ "${{ github.event.inputs.feed_name }}" == "Feed1" ]; then
+          echo "FEED_NUMBER=2" >> $GITHUB_ENV
         else
           echo "Unknown feed name"
           exit 1
