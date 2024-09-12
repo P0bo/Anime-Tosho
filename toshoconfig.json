@@ -47,7 +47,7 @@
       "single_file": 1,
       "image":[
         {
-          "18086":304486
+          "18086":304486,
           "17914":301662,
           "17221":302190,
           "17965":300344,
@@ -68,22 +68,6 @@
           "18534":304562,
           "17507":304865,
           "16828":304867
-          
-        }
-      ]
-    },
-    {
-      "number": 2,
-      "name": "Bleach",
-      "xml_file_name": "Bleach.xml",
-      "link": "https://www.bleach-soulresonance.com",
-      "api_link": "https://feed.animetosho.org/json?q=%22%5Bjudas%5D%22+bd+dual&aids=2369&page=",
-      "include_regex": "",
-      "exclude_regex": "",
-      "single_file": 0,
-      "image":[
-        {
-          "2369":226372
           
         }
       ]
